@@ -11,15 +11,15 @@ const hasGetResponseBodyResponseInResponse = (event: unknown): event is {request
 	"body" in event.response && typeof event.response.body === "string";
 
 export class HarEntriesBuilder {
-	byFrameId: Map<FrameId, HarEntryBuilder[]> = new Map();
-	byRequestId: Map<string, HarEntryBuilder> = new Map();
+	allEntryBuilders: HarEntryBuilder[] = [];
+	entryBuildersByFrameId: Map<FrameId, HarEntryBuilder[]> = new Map();
+	entryBuildersByRequestId: Map<string, HarEntryBuilder> = new Map();
 	harEntryCreationIndex = 0;
 
 	constructor(readonly options: PopulatedOptions) { }
 
 	#getCompletedHarEntries = calculateOnlyOnce( () => {
-		const entryBuilders = [...this.byFrameId.values()].flat();
-		const validEntryBuilders = entryBuilders.filter(e => e.isValidForInclusionInHarArchive)
+		const validEntryBuilders = this.allEntryBuilders.filter(e => e.isValidForInclusionInHarArchive)
 		const sortedValidEntryBuilders = validEntryBuilders.toSorted( (a, b) => a.requestTimeInSeconds! - b.requestTimeInSeconds! );
 		const harEntries = sortedValidEntryBuilders.map((entry) => entry.entry);
 		const nonNullHarEntries = harEntries.filter(entry => entry != null)
@@ -32,15 +32,16 @@ export class HarEntriesBuilder {
 
 	getHarEntriesBuildersForFrameIdsSortedByRequestSentTimeStamp = (...frameIds: FrameId[]) =>
 		([] as HarEntryBuilder[]).concat(
-			...frameIds.map(frameId => this.byFrameId.get(frameId) ?? []))
+			...frameIds.map(frameId => this.entryBuildersByFrameId.get(frameId) ?? []))
 		.filter( e => e.isValidForPageTimeCalculations)
 		.sort( (a, b) => a.requestWillBeSentEvent.timestamp - b.requestWillBeSentEvent.timestamp );
 
 	#getOrCreateForRequestId(requestId: string) {
-		let entry = this.byRequestId.get(requestId);
+		let entry = this.entryBuildersByRequestId.get(requestId);
 		if (entry == null) {
 			entry = new HarEntryBuilder(this.harEntryCreationIndex++, this.options);
-			this.byRequestId.set(requestId, entry);
+			this.entryBuildersByRequestId.set(requestId, entry);
+			this.allEntryBuilders.push(entry);
 		}
 		return entry;
 	}
@@ -69,20 +70,20 @@ export class HarEntriesBuilder {
 				const {redirectResponse, ...event} = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				const {requestId, frameId} = event;
 				let priorRedirects = 0;
-				const priorEntryForThisRequestId = this.byRequestId.get(requestId);
+				const priorEntryForThisRequestId = this.entryBuildersByRequestId.get(requestId);
 				if (priorEntryForThisRequestId != null && priorEntryForThisRequestId._requestWillBeSentEvent != null) {
 					priorRedirects = priorEntryForThisRequestId.priorRedirects + 1;
 					priorEntryForThisRequestId.redirectResponse = redirectResponse;
-					this.byRequestId.delete(requestId);
+					this.entryBuildersByRequestId.delete(requestId);
 				}
 				const entry = this.#getOrCreateForRequestId(requestId);
 				entry._requestWillBeSentEvent = event;
 				entry.priorRedirects = priorRedirects;
 				if (frameId != null) {
-					let entriesForFrameId = this.byFrameId.get(frameId);
+					let entriesForFrameId = this.entryBuildersByFrameId.get(frameId);
 					if (entriesForFrameId == null) {
 						entriesForFrameId = [];
-						this.byFrameId.set(frameId, entriesForFrameId);
+						this.entryBuildersByFrameId.set(frameId, entriesForFrameId);
 					}
 					entriesForFrameId.push(entry);
 				}

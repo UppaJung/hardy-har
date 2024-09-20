@@ -3,7 +3,7 @@
 // const { name } = require('../package');
 // const debug = require('debug')(name);
 import type { NpmHarFormatTypes } from "./types.ts";
-import urlParser from "npm:url";
+import urlParser from "node:url";
 
 export const calculateOnlyOnce = <T>(calculation: () => T ) => {
 	let hasBeenCalculated: boolean = false;

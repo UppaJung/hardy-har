@@ -33,7 +33,7 @@ export class HarPagesBuilder {
 			page.id = `page_${index + 1}`;
 			// Copy the page number into all the entries for this page.
 			for (const frameId of page.frameIds) {
-				for (const entry of this.harEntriesBuilder.byFrameId.get(frameId) ?? []) {
+				for (const entry of this.harEntriesBuilder.entryBuildersByFrameId.get(frameId) ?? []) {
 					entry.assignToPage(page);
 				}
 			}
@@ -51,21 +51,26 @@ export class HarPagesBuilder {
 		switch (eventName) {
 			case 'Page.frameAttached': {
 				const frameAttachedEvent = untypedEvent as DebuggerEvent<typeof eventName>;
+				const {frameId, parentFrameId} = frameAttachedEvent;
+				if (parentFrameId == null || parentFrameId.length === 0 || parentFrameId === frameId) {
+					this.getOrCreateByFrameId(frameId);
+					break;
+				}
 				// This event attaches a frame to a parent frame.
 				// Since frames are constructed descendant order (root, then child, then grandchild, etc.),
 				// frame attached events should be fired in descendant order, and so we should have already
 				// associated a parent frame before the page before it's child is attached. So, we can map the
 				// child to a page by looking up the page that the parent frame (and its FrameId) was already
 				// attached to.
-				const page = this.byFrameId.get(frameAttachedEvent.parentFrameId);
+				const page = this.byFrameId.get(parentFrameId);
 				if (page == null) {
 					// We never saw the page load, and are only seeing this frame within a page that we are unable to
 					// associate with a page. We'll drop it and all the entries related to it.
 					// (an alternative would be to create some sort of meta-page for it)
 					return;
 				}
-				page.addFrameId(frameAttachedEvent.frameId);
-				this.byFrameId.set(frameAttachedEvent.frameId, page);
+				page.addFrameId(frameId);
+				this.byFrameId.set(frameId, page);
 				break;
 			}
 			// The remaining events will be attached to a PageBuilder, so that we can process them at

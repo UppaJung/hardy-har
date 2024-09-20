@@ -10,7 +10,7 @@ import {
 } from "./util.ts";
 import type { PopulatedOptions } from "./Options.ts";
 import { WebSocketMessageOpcode, type HarEntry, type HarRequest, type HarResponse, type HarTimings, type WebSocketDirectionAndEvent, type WebSocketMessage } from "./types.ts";
-import { HarPageBuilder } from "./HarPageBuilder.ts";
+import type { HarPageBuilder } from "./HarPageBuilder.ts";
 
 
 function getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(startMs: number | undefined, endMs: number | undefined) {
@@ -149,7 +149,7 @@ export class HarEntryBuilder {
 			if (contentLength != null && !isNaN(contentLength)) return contentLength;
 		}
 		// This behavior mirrors chrome-har.
-		const encodedDataLength = this.response.encodedDataLength;
+		const encodedDataLength = this.loadingFinishedEvent?.encodedDataLength ?? this.response.encodedDataLength;
 		const responseHeaderSize = this.responseHeadersSize;
 		if (encodedDataLength == null || responseHeaderSize == -1 || responseHeaderSize > encodedDataLength) return -1;
 		return encodedDataLength - responseHeaderSize;
@@ -245,7 +245,7 @@ export class HarEntryBuilder {
 			)
 	}
 
-	protected get requestUrl() {
+	get requestUrl() {
 		return urlParser.format(this.requestParsedUrl);
 	}
 
@@ -257,8 +257,8 @@ export class HarEntryBuilder {
 		return parsePostData(getHeaderValue(this.requestHeaders, 'Content-Type'), this.request.postData);
 	}
 
-	protected get _isLinkPreload() {
-		return !!this.request.isLinkPreload;
+	protected get _isLinkPreloadObj() {
+		return this.request.isLinkPreload ? {_isLinkPreload: true} : {};
 	}
 
 	protected get method() {
@@ -300,10 +300,16 @@ export class HarEntryBuilder {
 
 		const responseBodyText = this.options.includeTextFromResponseBody ? this.responseBody : undefined;
 
+		const encoding = this.options.mimicChromeHar ?
+			(this.response as {encoding?: string}).encoding :
+			this.responseHeaders.find( h => h.name.toLowerCase() == 'content-encoding')?.value;
+		const encodingObj = this.options.mimicChromeHar || encoding != null ? {encoding} : {}
+
 		return {
-			mimeType: mimeType,
+			mimeType,
 			size: contentSize,
 			text: responseBodyText,
+			...encodingObj,
 			...compression_obj,
 		} satisfies NpmHarFormatTypes.Content
 				
@@ -389,7 +395,7 @@ export class HarEntryBuilder {
 
 
 	get startedDateTime(): string {
-  	return new Date(this.startTimeInSeconds * 1000).toISOString();
+  	return new Date(Math.round(this.startTimeInSeconds * 1000)).toISOString();
 	}
 
 	protected get cache(): NpmHarFormatTypes.Cache {
@@ -466,19 +472,19 @@ export class HarEntryBuilder {
 		return {
 			_chunks: this.dataReceivedEvents.map( (e) => ({
 					ts: this.page == null ?
-						roundToThreeDecimalPlaces(this.wallTime + (e.timestamp-this.timestamp) * 1000) :
-						roundToThreeDecimalPlaces(this.page.wallTime + (this.page.timestamp - this.timestamp) * 1000),
+						roundToThreeDecimalPlaces( (e.timestamp - this.timestamp) * 1000) :
+						roundToThreeDecimalPlaces( (e.timestamp - this.page.timestamp) * 1000),
 					bytes: e.dataLength
 				} satisfies NpmHarFormatTypes.Chunk as NpmHarFormatTypes.Chunk
 			))
 		}
 	}
 
-	get pageRefObj() {
+	get pagerefObj() {
 		if (this.page == null) {
 			return {}
 		} else {
-			return {pageRef: this.page.id};
+			return {pageref: this.page.id};
 		}
 	}
 
@@ -525,7 +531,7 @@ export class HarEntryBuilder {
 			 (loadingFinishedOrFailedTimestamp - timing.requestTime) * 1000 - timing.receiveHeadersEnd :
 			 0;
 		
-		const _queued = timing == null ? 0 : roundToThreeDecimalPlaces(timing.requestTime - (this.requestWillBeSentEvent.timestamp * 1000)) ?? 0;
+		const _queued = timing == null ? 0 : roundToThreeDecimalPlaces(1000 * (timing.requestTime - this.requestWillBeSentEvent.timestamp)) ?? 0;
 		const _queuedObj = _queued >= 0 ? {_queued} : {};
 
 		return {
@@ -551,7 +557,7 @@ export class HarEntryBuilder {
 			headers: this.requestHarHeaders,
 			headersSize: this.requestHeadersSize,
 			httpVersion: this.httpVersion ?? '',
-			_isLinkPreload: this._isLinkPreload,
+			...this._isLinkPreloadObj,
 		} as const satisfies HarRequest
 	}
 
@@ -567,7 +573,7 @@ export class HarEntryBuilder {
 			content: this.responseContent,
 			cookies: this.responseCookies ?? [],
 			headers: this.responseHeaders,
-			_transferSize: response.encodedDataLength,
+			_transferSize: this.loadingFinishedEvent?.encodedDataLength ?? response.encodedDataLength,
 			fromDiskCache: this.response.fromDiskCache ?? false,
 			fromEarlyHints: this.response.fromEarlyHints ?? false,
 			fromServiceWorker: this.response.fromServiceWorker ?? false,
@@ -594,7 +600,7 @@ export class HarEntryBuilder {
 			_priority: this._priority,
 			_resourceType: this.resourceType,
 			_requestTime: this._requestTime,
-			...this.pageRefObj,
+			...this.pagerefObj,
 			...this._chunks_obj,
 			...this.time_obj,
 			...this._was_pushed_obj,

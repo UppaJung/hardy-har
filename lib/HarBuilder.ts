@@ -6,7 +6,7 @@ import { ChromeHarMethodParamsObject, EventNameAndObject, EventNameAndObjectTupl
 
 
 // FIXME -- move centrally
-const PackageName = "capture-har";
+const PackageName = "hardy-har";
 const PackageVersion = "0.0.1";
 
 export class HarBuilder {
@@ -39,7 +39,7 @@ export class HarBuilder {
 	}
 
 	onDebuggerEvent = (eventName: string, untypedEvent: unknown) => {
-		if (untypedEvent == null || typeof untypedEvent !== 'object' || typeof eventName != "string") return;
+		if (untypedEvent == null || typeof untypedEvent !== 'object' || typeof eventName !== "string") return;
 		if (eventName.startsWith('Network.')) {
 			this.entriesBuilder.onNetworkEvent(eventName, untypedEvent);
 		} else if (eventName.startsWith('Page.')) {

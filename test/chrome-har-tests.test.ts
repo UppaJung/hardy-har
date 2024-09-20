@@ -1,11 +1,12 @@
 import { describe, it as test } from "jsr:@std/testing/bdd";
 import { expect } from "jsr:@std/expect";
 
-import { HarEntry, harFromChromeHarMessageParams, Options } from "../lib/index.ts";
-import { HarEntryGenerated } from "../lib/HarEntryBuilder.ts";
-// import * as ch from 'npm:chrome-har';
+import { type HarEntry, harFromChromeHarMessageParams, type Options } from "../lib/index.ts";
+import type { HarEntryGenerated } from "../lib/HarEntryBuilder.ts";
+import * as ch from 'npm:chrome-har';
 // spell-checker: disable
 import * as path from "jsr:@std/path";
+import type { NpmHarFormatTypes } from "../lib/types.ts";
 
 const TestLogPath = path.resolve(import.meta.dirname!, 'test-logs');
 
@@ -46,17 +47,19 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: HarEntryGenerated
   });
 }
 
-function perflog(filename: string) {
+function perfLogPath(filename: string) {
   return path.resolve(TestLogPath, filename);
 }
+
 async function perflogs() {
   const dirListing = await Array.fromAsync(Deno.readDir(TestLogPath));
   return dirListing.filter(e => e.isFile && path.extname(e.name) === '.json').map( e => e.name );
 }
 
+const filenames = await perflogs();
+
 async function parsePerflog(perflogPath: string, options?: Options) {
-  const data = await Deno.readTextFile(perflogPath);
-  const log = JSON.parse(data);
+  const log = JSON.parse(await Deno.readTextFile(perflogPath));
   const har = harFromChromeHarMessageParams(log, options);
   return har;
 }
@@ -65,28 +68,33 @@ function sortedByRequestTime(entries: HarEntry[]) {
   return entries.sort((e1, e2) => e1._requestTime! - e2._requestTime!);
 }
 
-// async function testAllHARs(options?: Options) {
-//   const filenames = await perflogs();
-//   await Promise.all(
-//     filenames.map( async (filename) => {
-//       try {
-//         const har = await parsePerflog(perflog(filename), options);        
-//         assert.deepEqual(sortedByRequestTime(har.log.entries), har.log.entries);
-//         validateConnectionOverlap(har.log.entries);
-//       } catch (e) {
-//         console.error(`Failed to generate valid HAR from ${filename}`);
-//         throw e;
-//       }
-//     })
-//   );
-// }
+// failing early-hints.json, hardy har excludes 'D746AB1321BD7956C8C70D3F91191895'
+describe.only('Mimimcs chrome-har', () => {
+  const options: Options = {mimicChromeHar: true};
+  for (const filename of filenames.filter( f => f == "www.zdnet.com.json")) {
+    test (`${filename}`, async () => {
+      const debuggerLog = JSON.parse(await Deno.readTextFile(perfLogPath(filename)));
+      const hardyHar = harFromChromeHarMessageParams(debuggerLog, options);
+      expect(sortedByRequestTime(hardyHar.log.entries)).toEqual(hardyHar.log.entries);
+      validateRequestsOnSameConnectionDoNotOverlap(hardyHar.log.entries);
+      const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as NpmHarFormatTypes.Har;
+      const chromeHarEntriesMissingFromHardyHar = chromeHar.log.entries.filter(e => !hardyHar.log.entries.some(le => le._requestId === e._requestId));
+      const hardyHarentriesNotInChromeHar = hardyHar.log.entries.filter(e => !chromeHar.log.entries.some(le => le._requestId === e._requestId));
+      if (chromeHarEntriesMissingFromHardyHar.length > 0 || hardyHarentriesNotInChromeHar.length > 0) {
+        console.log(`chrome-har entries missing: ${chromeHarEntriesMissingFromHardyHar.length}`);
+      }
+      expect(hardyHarentriesNotInChromeHar.length).toBe(0);
+      expect(chromeHarEntriesMissingFromHardyHar.length).toBe(0);
+      expect(chromeHar.log.entries[0]).toEqual(hardyHar.log.entries[0])
+    });
+  }
+});
 
-const filenames = await perflogs();
 
-describe('With deafult options', () => {
+describe('With default options', () => {
   for (const filename of filenames) {
     test (`Generate from ${filename}`, async () => {
-      const har = await parsePerflog(perflog(filename));        
+      const har = await parsePerflog(perfLogPath(filename));        
       expect(sortedByRequestTime(har.log.entries)).toEqual(har.log.entries);
       validateRequestsOnSameConnectionDoNotOverlap(har.log.entries);
     });
@@ -97,7 +105,7 @@ describe('With option {includeResourcesFromDiskCache: true}', () => {
   const options: Options = { includeResourcesFromDiskCache: true };
   for (const filename of filenames) {
     test (`Generate from ${filename}`, async () => {
-      const har = await parsePerflog(perflog(filename), options);        
+      const har = await parsePerflog(perfLogPath(filename), options);        
       expect(sortedByRequestTime(har.log.entries)).toEqual(har.log.entries);
       validateRequestsOnSameConnectionDoNotOverlap(har.log.entries);
     });
@@ -105,43 +113,35 @@ describe('With option {includeResourcesFromDiskCache: true}', () => {
 });
 
 test('zdnet', async () => {
-  const perflogPath = perflog('www.zdnet.com.json');
+  const perflogPath = perfLogPath('www.zdnet.com.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
-  
-  // const data = await fs.readFile(perflogPath, { encoding: 'utf8' });
-  // const legacy = ch.harFromMessages(JSON.parse(data),{includeTextFromResponseBody: false});
-  // const legacyEntriesMissing = legacy.log.entries.filter(e => !log.entries.some(le => le._requestId === e._requestId));
-  // const entriesNotInLegacy = log.entries.filter(e => !legacy.log.entries.some(le => le._requestId === e._requestId));
-  // expect(entriesNotInLegacy.length, 0);
-  // expect(legacyEntriesMissing.length, 0);
-
   expect(log.pages?.length).toBe(1);
   expect(log.entries.length).toBe(343);
 });
 
 test('ryan', async () => {
-  const perflogPath = perflog('ryan.json');
+  const perflogPath = perfLogPath('ryan.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   expect(log.pages?.length).toBe(1);
 });
 
 test('chrome66', async () => {
-  const perflogPath = perflog('www.sitepeed.io.chrome66.json');
+  const perflogPath = perfLogPath('www.sitepeed.io.chrome66.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   expect(log.entries.length).toBe(9);
 });
 
 test('Parses IPv6 address', async () => {
-  const perflogPath = perflog('www.google.ru.json');
+  const perflogPath = perfLogPath('www.google.ru.json');
   const har = await parsePerflog(perflogPath);
   expect(har.log.entries[0]?.serverIPAddress).toBe('2a00:1450:400f:80a::2003')
 });
 
 test('Forwards the resource type value', async () => {
-  const perflogPath = perflog('www.google.ru.json');
+  const perflogPath = perfLogPath('www.google.ru.json');
   const expected = {
     document: 1,
     image: 27,
@@ -158,42 +158,34 @@ test('Forwards the resource type value', async () => {
 });
 
 test('navigatedWithinDocument', async () => {
-  const perflogPath = perflog('navigatedWithinDocument.json');
+  const perflogPath = perfLogPath('navigatedWithinDocument.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   expect(log.entries.length).toBe(1);
 });
 
 test('Generates multiple pages', async () => {
-  const perflogPath = perflog('www.wikipedia.org.json');
+  const perflogPath = perfLogPath('www.wikipedia.org.json');
   const har = await parsePerflog(perflogPath);
   expect(har.log.pages?.length).toBe(2);
 });
 
 test('Skips empty pages', async () => {
-  const perflogPath = perflog('www.wikipedia.org-empty.json');
+  const perflogPath = perfLogPath('www.wikipedia.org-empty.json');
   const har = await parsePerflog(perflogPath);
   expect(har.log.pages?.length).toBe(1);
 });
 
 test('Click on link in Chrome should create new page', async () => {
-  const perflogPath = perflog('linkClickChrome.json');
+  const perflogPath = perfLogPath('linkClickChrome.json');
   const har = await parsePerflog(perflogPath);
   expect(har.log.pages?.length).toBe(1);
 });
 
 test('Includes pushed assets', async () => {
-  const perflogPath = perflog('akamai-h2push.json');
+  const perflogPath = perfLogPath('akamai-h2push.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
-
-  // const data = await fs.readFile(perflogPath, { encoding: 'utf8' });
-  // const legacy = ch.harFromMessages(JSON.parse(data),{includeTextFromResponseBody: false});
-  // const legacyEntriesMissing = legacy.log.entries.filter(e => !log.entries.some(le => le._requestId === e._requestId));
-  // const entriesNotInLegacy = log.entries.filter(e => !legacy.log.entries.some(le => le._requestId === e._requestId));
-
-  // expect(entriesNotInLegacy.length).toBe(0);
-  // expect(legacyEntriesMissing.length).toBe(0);
 
   expect(log.pages?.length).toBe(1);
   const images = har.log.entries.filter(e =>
@@ -206,7 +198,7 @@ test('Includes pushed assets', async () => {
 });
 
 test('Includes early hints requests', async () => {
-  const perflogPath = perflog('early-hints.json');
+  const perflogPath = perfLogPath('early-hints.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   const earlyHints = log.entries.filter(e => e.response.fromEarlyHints);
@@ -214,7 +206,7 @@ test('Includes early hints requests', async () => {
 });
 
 test('Includes response bodies', async () => {
-  const perflogPath = perflog('www.sitepeed.io.chrome66.json');
+  const perflogPath = perfLogPath('www.sitepeed.io.chrome66.json');
   const har = await parsePerflog(perflogPath, {includeTextFromResponseBody: true});
   const {log} = har;
   const responsesWithContentText = log.entries.filter(e => e.response.content.text != null);
@@ -222,21 +214,9 @@ test('Includes response bodies', async () => {
 });
 
 test('Includes canceled response', async () => {
-  const perflogPath = perflog('canceled-video.json');
+  const perflogPath = perfLogPath('canceled-video.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
-
-  // const data = await fs.readFile(perflogPath, { encoding: 'utf8' });
-  // const legacy = ch.harFromMessages(JSON.parse(data),{includeTextFromResponseBody: false});
-  // const legacyEntriesMissing = legacy.log.entries.filter(e => !log.entries.some(le => le._requestId === e._requestId));
-  // const entriesNotInLegacy = log.entries.filter(e => !legacy.log.entries.some(le => le._requestId === e._requestId));
-
-  // expect(entriesNotInLegacy.length).toBe(0);
-  // expect(legacyEntriesMissing.length).toBe(0);
-
-  // const legacyVideoAsset = legacy.log.entries.find(
-  //   e => e.request.url === 'https://www.w3schools.com/tags/movie.mp4'
-  // );
 
   const videoAsset = log.entries.find(
     e => e.request.url === 'https://www.w3schools.com/tags/movie.mp4'
@@ -246,7 +226,7 @@ test('Includes canceled response', async () => {
 });
 
 test('Includes iframe request when frame is not attached', async () => {
-  const perflogPath = perflog('iframe-not-attached.json');
+  const perflogPath = perfLogPath('iframe-not-attached.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   const imageAsset = log.entries.filter(
@@ -256,7 +236,7 @@ test('Includes iframe request when frame is not attached', async () => {
 });
 
 test('Includes extra info in request', async () => {
-  const perflogPath = perflog('www.calibreapp.com.signin.json');
+  const perflogPath = perfLogPath('www.calibreapp.com.signin.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   const cssAsset = log.entries.find(e =>
@@ -268,7 +248,7 @@ test('Includes extra info in request', async () => {
 });
 
 test('Includes extra info in response', async () => {
-  const perflogPath = perflog('www.calibreapp.com.signin.json');
+  const perflogPath = perfLogPath('www.calibreapp.com.signin.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   const cssAsset = log.entries.find(e =>
@@ -281,7 +261,7 @@ test('Includes extra info in response', async () => {
 });
 
 test('Excludes request blocked cookies', async () => {
-  const perflogPath = perflog('samesite-sandbox.glitch.me.json');
+  const perflogPath = perfLogPath('samesite-sandbox.glitch.me.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   const cookiesAsset = log.entries.find(e =>
@@ -292,7 +272,7 @@ test('Excludes request blocked cookies', async () => {
 });
 
 test('Excludes response blocked cookies', async () => {
-  const perflogPath = perflog('response-blocked-cookies.json');
+  const perflogPath = perfLogPath('response-blocked-cookies.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   const request = log.entries.find(
@@ -302,7 +282,7 @@ test('Excludes response blocked cookies', async () => {
 });
 
 test('Includes initial redirect', async () => {
-  const perflogPath = perflog('www.vercel.com.json');
+  const perflogPath = perfLogPath('www.vercel.com.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
 
@@ -319,7 +299,7 @@ test('Includes initial redirect', async () => {
 });
 
 test('Network.responseReceivedExtraInfo may be fired before or after responseReceived', async () => {
-  const perflogPath = perflog('bing.com.json');
+  const perflogPath = perfLogPath('bing.com.json');
   const har = await parsePerflog(perflogPath);
   const {log} = har;
   const {entries} = log;

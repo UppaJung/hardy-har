@@ -11,18 +11,18 @@ export class HarPageBuilder {
 	frameRequestedNavigationEvent?: DevToolsProtocol.Page.FrameRequestedNavigationEvent;
 	navigatedWithinDocumentEvent?: DevToolsProtocol.Page.NavigatedWithinDocumentEvent;
 
-	frameIds: FrameId[];
+	frameIds: Set<FrameId>;
 
 	constructor(public readonly rootFrameId: FrameId, protected readonly harEntriesBuilder: HarEntriesBuilder) {
-		this.frameIds = [rootFrameId];
+		this.frameIds = new Set<FrameId>([rootFrameId]);
 	}
 
 	addFrameId = (frameId: FrameId) => {
-		this.frameIds.push(frameId);
+		this.frameIds.add(frameId);
 	}
 
 	protected get title() {
-		return this.frameRequestedNavigationEvent?.url ?? 'unknown'
+		return this.frameRequestedNavigationEvent?.url ?? this.navigatedWithinDocumentEvent?.url ?? this.earliestRequest.requestUrl ?? "unknown";
 	}
 
 	#getEarliestRequest = calculateOnlyOnce( () => 
