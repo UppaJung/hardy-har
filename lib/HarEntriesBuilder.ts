@@ -20,7 +20,9 @@ export class HarEntriesBuilder {
 
 	#getCompletedHarEntries = calculateOnlyOnce( () => {
 		const validEntryBuilders = this.allEntryBuilders.filter(e => e.isValidForInclusionInHarArchive)
-		const sortedValidEntryBuilders = validEntryBuilders; // .toSorted( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds );
+		const sortedValidEntryBuilders = // this.options.mimicChromeHar ?
+			// validEntryBuilders :
+			validEntryBuilders.toSorted( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds );
 		const harEntries = sortedValidEntryBuilders.map((entry) => entry.entry);
 		const nonNullHarEntries = harEntries.filter(entry => entry != null)
 		return nonNullHarEntries;
@@ -34,7 +36,10 @@ export class HarEntriesBuilder {
 		([] as HarEntryBuilder[]).concat(
 			...frameIds.map(frameId => this.entryBuildersByFrameId.get(frameId) ?? []))
 		.filter( e => e.isValidForPageTimeCalculations)
-		.sort( (a, b) => a.requestWillBeSentEvent.timestamp - b.requestWillBeSentEvent.timestamp );
+		.sort( this.options.mimicChromeHar ?
+			((a, b) => a.orderArrived - b.orderArrived ) :
+			((a, b) => a.requestWillBeSentEvent.timestamp - b.requestWillBeSentEvent.timestamp )
+		);
 
 	#getOrCreateForRequestId(requestId: string) {
 		let entry = this.entryBuildersByRequestId.get(requestId);

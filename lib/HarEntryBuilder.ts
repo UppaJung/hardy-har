@@ -125,7 +125,7 @@ export class HarEntryBuilder {
 
 	protected get responseHeadersSize() {
 		return (this.responseHeadersText != null) ? this.responseHeadersText.length :
-			(this.isHttp1x && this.response.fromDiskCache === false && this.response.fromEarlyHints == false) ?
+			(this.isHttp1x && !this.response.fromDiskCache && !this.response.fromEarlyHints) ?
 			calculateResponseHeaderSize(this.response) :
 			-1;
 	}
@@ -154,7 +154,10 @@ export class HarEntryBuilder {
 		// This behavior mirrors chrome-har.
 		const encodedDataLength = this.loadingFinishedEvent?.encodedDataLength ?? this.response.encodedDataLength;
 		const responseHeaderSize = Math.max(this.responseHeadersSize, 0);
-		if (encodedDataLength == null || responseHeaderSize > encodedDataLength) return -1;
+		if (!this.options.mimicChromeHar) {
+			// Mimicking a bug that allows chrome-har to have bodySize < -1
+			if (encodedDataLength == null || responseHeaderSize > encodedDataLength) return -1;
+		}
 		return encodedDataLength - responseHeaderSize;
 	}
 
@@ -285,7 +288,7 @@ export class HarEntryBuilder {
 
 
 	get compression_obj() {
-		const compression = this.responseBodySize == - 1 ? undefined :
+		const compression = this.responseBodySize < 0 ? undefined :
 		 	Math.max(0, this.contentSize - this.responseBodySize);
 		if (compression != null && compression > 0) {
 			return {compression}

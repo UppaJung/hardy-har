@@ -35,7 +35,7 @@ export const calculateRequestHeaderSize = ({
 				Object.entries(headers).map( ([field, value]) =>
 			 // header field lines https://httpwg.org/specs/rfc9112.html#header.field.syntax
 				`${field}: ${value}\r\n`
-		).join()
+		).join("")
 	// empty line to indicate end of headers
 	}\r\n`.length;
 
@@ -48,7 +48,7 @@ export const calculateResponseHeaderSize = ({
 	`${protocol} ${status} ${statusText}\r\n${
 		Object.entries(headers).map( ([field, value]) =>
 			`${field}: ${value}\r\n`
-		).join()
+		).join("")
 	}\r\n`.length;
 
 
