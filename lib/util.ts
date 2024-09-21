@@ -1,9 +1,7 @@
-// 'use strict';
-// const urlParser = require('url');
-// const { name } = require('../package');
-// const debug = require('debug')(name);
+import type { Options } from "./index.ts";
 import type { NpmHarFormatTypes } from "./types.ts";
-import urlParser from "node:url";
+// FIXME remove
+import url from "node:url";
 
 export const calculateOnlyOnce = <T>(calculation: () => T ) => {
 	let hasBeenCalculated: boolean = false;
@@ -43,16 +41,17 @@ export function toNameValuePairs(object: Record<string, string | string[] | unde
 }
 
 export function parseUrlEncoded(data: string) {
-	const params = urlParser.parse(`?${data}`, true).query;
+	// FIXME -- deprecated. use only for testing compatibility with chrome-har
+	const params = url.parse(`?${data}`, true).query;
 	return toNameValuePairs(params);
 }
 
-export function parsePostData(contentType?: string, postData?: string) {
+export function parsePostData(contentType: string | undefined, postData: string | undefined, options: Options) {
 	if (!isNonEmptyString(contentType) || !isNonEmptyString(postData)) {
 		return undefined;
 	}
 	try {
-		if (/^application\/x-www-form-urlencoded/.test(contentType)) {
+		if (/^application\/x-www-form-urlencoded/.test(contentType) && !options.mimicChromeHar) {
 			return {
 				mimeType: contentType,
 				params: parseUrlEncoded(postData)

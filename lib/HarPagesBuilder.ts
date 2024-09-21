@@ -1,5 +1,5 @@
-import { DebuggerEvent } from "./DebuggerEvent.ts";
-import { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
+import type { DebuggerEvent } from "./DebuggerEvent.ts";
+import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPageBuilder } from "./HarPageBuilder.ts";
 import { type FrameId, isHarPageEventName } from "./types.ts";
 import { calculateOnlyOnce } from "./util.ts";

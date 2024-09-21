@@ -1,5 +1,4 @@
 import type {DevToolsProtocol, NpmHarFormatTypes} from "./types.ts";
-import urlParser from 'npm:url';
 import { networkCookieToHarFormatCookie, parseCookie, parseRequestCookies, parseResponseCookies } from "./cookies.ts";
 import { calculateRequestHeaderSize, calculateResponseHeaderSize, getHeaderValue, parseHeaders } from "./headers.ts";
 import {
@@ -11,6 +10,7 @@ import {
 import type { PopulatedOptions } from "./Options.ts";
 import { WebSocketMessageOpcode, type HarEntry, type HarRequest, type HarResponse, type HarTimings, type WebSocketDirectionAndEvent, type WebSocketMessage } from "./types.ts";
 import type { HarPageBuilder } from "./HarPageBuilder.ts";
+import urlParser from "node:url";
 
 
 function getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(startMs: number | undefined, endMs: number | undefined) {
@@ -43,7 +43,7 @@ export class HarEntryBuilder {
 
 	#assignedPage: HarPageBuilder | undefined;
 
-	constructor(readonly orderArrived: number, readonly options: PopulatedOptions) {}
+	constructor(public readonly orderArrived: number, readonly options: PopulatedOptions) {}
 
 	get isValidForPageTimeCalculations() {
 		return this._requestWillBeSentEvent != null;
@@ -91,6 +91,9 @@ export class HarEntryBuilder {
 	}
 
 	protected get _response() {
+		if (this.responseReceivedEvent != null && this.redirectResponse != null) {
+			throw new Error("Unexpected state with event having two types of responses.");
+		}
 		return this.responseReceivedEvent?.response ?? this.redirectResponse;
 	}
 
@@ -121,7 +124,7 @@ export class HarEntryBuilder {
 	}
 
 	protected get responseHeadersSize() {
-		return (this.isHttp1x && this.responseHeadersText != null) ? this.responseHeadersText.length :
+		return (this.responseHeadersText != null) ? this.responseHeadersText.length :
 			(this.isHttp1x && this.response.fromDiskCache === false && this.response.fromEarlyHints == false) ?
 			calculateResponseHeaderSize(this.response) :
 			-1;
@@ -150,8 +153,8 @@ export class HarEntryBuilder {
 		}
 		// This behavior mirrors chrome-har.
 		const encodedDataLength = this.loadingFinishedEvent?.encodedDataLength ?? this.response.encodedDataLength;
-		const responseHeaderSize = this.responseHeadersSize;
-		if (encodedDataLength == null || responseHeaderSize == -1 || responseHeaderSize > encodedDataLength) return -1;
+		const responseHeaderSize = Math.max(this.responseHeadersSize, 0);
+		if (encodedDataLength == null || responseHeaderSize > encodedDataLength) return -1;
 		return encodedDataLength - responseHeaderSize;
 	}
 
@@ -227,7 +230,8 @@ export class HarEntryBuilder {
 		const {response, request, httpVersion} = this;
 		if (response != null && response.requestHeadersText != null) {
 			return response.requestHeadersText.length;
-		} else if (request != null && httpVersion != null) {
+			// Chrome-har only allows calculating request size if http is version 1.x
+		} else if (request != null && httpVersion != null && (isHttp1x(httpVersion) || !this.options.mimicChromeHar)) {
 			return calculateRequestHeaderSize({...request, httpVersion});
 		} else {
 			return -1;
@@ -254,7 +258,8 @@ export class HarEntryBuilder {
 	}
 
 	protected get postData() {
-		return parsePostData(getHeaderValue(this.requestHeaders, 'Content-Type'), this.request.postData);
+		const requestHeaders = this.options.mimicChromeHar ? this.requestWillBeSentEvent.request.headers : this.request.headers;
+		return parsePostData(getHeaderValue(requestHeaders, 'Content-Type'), this.request.postData, this.options);
 	}
 
 	protected get _isLinkPreloadObj() {
@@ -379,9 +384,10 @@ export class HarEntryBuilder {
 	 * This start time is guaranteed to be monotonically increasing within a page by starting from
 	 * the wallTime of the page and adding in the increase in the timestamp since the page-creation time.
 	 */
-	get startTimeInSeconds() {
+	get startedTimeInSeconds() {
 		if (this.page != null) {
-			const timeSincePageTimeStamp = Math.max(0, this.timestamp - this.page.timestamp);
+			// page.__wallTime + (timing.requestTime - page.__timestamp);
+			const timeSincePageTimeStamp = Math.max(0, (this.response.timing?.requestTime ?? this.timestamp) - this.page.timestamp);
 			return this.page.wallTime + timeSincePageTimeStamp;
 		} else {
 			return this.wallTime;
@@ -395,7 +401,10 @@ export class HarEntryBuilder {
 
 
 	get startedDateTime(): string {
-  	return new Date(Math.round(this.startTimeInSeconds * 1000)).toISOString();
+		// if (this.options.mimicChromeHar) {
+		// 	return  dayjs.unix(this.startedTimeInSeconds).toISOString();
+		// }
+   	return new Date(this.startedTimeInSeconds * 1000).toISOString();
 	}
 
 	protected get cache(): NpmHarFormatTypes.Cache {
@@ -428,7 +437,7 @@ export class HarEntryBuilder {
 	}
 
 	get requestTimeInSeconds() {
-		return this.response.timing?.requestTime ?? this.requestWillBeSentEvent.timestamp;
+		return this.response.timing?.requestTime ?? (() => {throw new Error("timing not set")})(); //  ?? this.requestWillBeSentEvent.timestamp;
 	}
 
 	/**

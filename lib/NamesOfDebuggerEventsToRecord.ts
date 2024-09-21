@@ -1,4 +1,4 @@
-import { DebuggerNetworkHttpEventName, DebuggerNetworkWebSocketEventName, DebuggerPageEventName } from "./DebuggerEvent.ts";
+import type { DebuggerNetworkHttpEventName, DebuggerNetworkWebSocketEventName, DebuggerPageEventName } from "./DebuggerEvent.ts";
 
 export const NamesOfDebuggerWebSocketEventsToRecord = [
 	"Network.webSocketFrameSent",

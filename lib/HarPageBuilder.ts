@@ -1,4 +1,4 @@
-import { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
+import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import type { FrameId, HarPage, DevToolsProtocol, NpmHarFormatTypes} from "./types.ts";
 import { calculateOnlyOnce, roundToThreeDecimalPlaces, } from "./util.ts";
 

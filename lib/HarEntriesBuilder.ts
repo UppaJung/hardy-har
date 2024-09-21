@@ -3,7 +3,7 @@ import { HarEntryBuilder } from "./HarEntryBuilder.ts";
 import type { PopulatedOptions } from "./Options.ts";
 import { type FrameId, isHarNetworkEventOrMetaEventName } from "./types.ts";
 import { calculateOnlyOnce } from "./util.ts";
-import { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
+import type { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
 
 const hasGetResponseBodyResponseInResponse = (event: unknown): event is {requestId: DevToolsProtocol.Network.RequestId} & {response: DevToolsProtocol.Network.GetResponseBodyResponse} =>
 	event != null && typeof event === "object" && "requestId" in event && typeof event.requestId === "string"  &&
@@ -20,7 +20,7 @@ export class HarEntriesBuilder {
 
 	#getCompletedHarEntries = calculateOnlyOnce( () => {
 		const validEntryBuilders = this.allEntryBuilders.filter(e => e.isValidForInclusionInHarArchive)
-		const sortedValidEntryBuilders = validEntryBuilders.toSorted( (a, b) => a.requestTimeInSeconds! - b.requestTimeInSeconds! );
+		const sortedValidEntryBuilders = validEntryBuilders; // .toSorted( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds );
 		const harEntries = sortedValidEntryBuilders.map((entry) => entry.entry);
 		const nonNullHarEntries = harEntries.filter(entry => entry != null)
 		return nonNullHarEntries;

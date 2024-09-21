@@ -1,8 +1,8 @@
-import { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
+import type { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
 import { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPagesBuilder } from "./HarPagesBuilder.ts";
-import { defaultOptions, Options, PopulatedOptions } from "./Options.ts";
-import { ChromeHarMethodParamsObject, EventNameAndObject, EventNameAndObjectTuple, HarArchive, HarEventOrMetaEventName } from "./types.ts";
+import { defaultOptions, type Options, type PopulatedOptions } from "./Options.ts";
+import type { ChromeHarMethodParamsObject, EventNameAndObject, EventNameAndObjectTuple, HarArchive, HarEventOrMetaEventName } from "./types.ts";
 
 
 // FIXME -- move centrally

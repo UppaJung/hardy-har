@@ -78,14 +78,39 @@ describe.only('Mimimcs chrome-har', () => {
       expect(sortedByRequestTime(hardyHar.log.entries)).toEqual(hardyHar.log.entries);
       validateRequestsOnSameConnectionDoNotOverlap(hardyHar.log.entries);
       const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as NpmHarFormatTypes.Har;
+
+      // Chrome-har had a bogus [test case](https://github.com/sitespeedio/chrome-har/blob/5b076f8c8e578e929670761dcc31345e4e87103c/test/tests.js#L68) that purported to validate that
+      // entries appeared in time-sorted order. The problem was, the test case used in-place sort
+      // (`.sort`, instead of `[...entries].sort()`) or `.toSorted`, which mutated the original
+      // array to match the mutated array. Hence, chrome-har appeared to be creating arrays in
+      // a canonical order when, in fact, it was not. Mimicking that behavior is not something
+      // we're going to try to do.
+      chromeHar.log.entries.sort( (a, b) => a.startedDateTime.localeCompare(b.startedDateTime) );
       const chromeHarEntriesMissingFromHardyHar = chromeHar.log.entries.filter(e => !hardyHar.log.entries.some(le => le._requestId === e._requestId));
       const hardyHarentriesNotInChromeHar = hardyHar.log.entries.filter(e => !chromeHar.log.entries.some(le => le._requestId === e._requestId));
+      expect (hardyHarentriesNotInChromeHar.length).toBe(0);
+      expect (chromeHarEntriesMissingFromHardyHar.length).toBe(0);
+
+      for (let i = 0; i < hardyHar.log.entries.length; i++) {
+        const hh = hardyHar.log.entries[i];
+        const ch = chromeHar.log.entries[i]!;
+        if (hh._requestId !== ch._requestId || hh._requestTime !== ch._requestTime) {
+          console.log(`Request ID mismatch at index ${i}`);
+        }
+        expect(hh).toEqual(ch);
+      }
+        
+      // expect(hardyHar.log.entries.map(({_requestId, startedDateTime}) => ({requestId: _requestId, startedDateTime})))
+      //   .toBe(chromeHar.log.entries.map(({_requestId, startedDateTime}) => ({requestId: _requestId, startedDateTime})));
       if (chromeHarEntriesMissingFromHardyHar.length > 0 || hardyHarentriesNotInChromeHar.length > 0) {
         console.log(`chrome-har entries missing: ${chromeHarEntriesMissingFromHardyHar.length}`);
       }
       expect(hardyHarentriesNotInChromeHar.length).toBe(0);
       expect(chromeHarEntriesMissingFromHardyHar.length).toBe(0);
-      expect(chromeHar.log.entries[0]).toEqual(hardyHar.log.entries[0])
+      for (let i = 0; i < hardyHar.log.entries.length; i++) {
+//        expect(hardyHar.log.entries[i]).toEqual(chromeHar.log.entries[i]);
+        expect(hardyHar.log.entries[i]).toEqual(chromeHar.log.entries.find( e => e._requestId === hardyHar.log.entries[i]._requestId));
+      }
     });
   }
 });
