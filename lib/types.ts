@@ -12,19 +12,6 @@ export interface HarPage extends NpmHarFormatTypes.Page {
 	_pageTimings?: NpmHarFormatTypes.Timings;
 }
 
-export interface PageConstructionMetadata {
-	wallTime: number;
-	timestamp: number;
-	harEntriesAttachedByRequestId: Map<RequestId, HarEntryUnderConstruction>;
-}
-
-export type HasPageConstructionMetadata = {
-	constructionMetadata: PageConstructionMetadata;
-}
-
-export type HarPageUnderConstruction = HasPageConstructionMetadata &
-	Omit<HarPage, 'id'>;
-
 export interface HarTimings extends NpmHarFormatTypes.Timings {
 	_queued?: number;
 }
@@ -118,29 +105,6 @@ export type HarLog = Omit<NpmHarFormatTypes.Log, 'entries'> & {entries: HarEntry
 export type HarArchive = Omit<NpmHarFormatTypes.Har, 'log'> & {log: HarLog};
 
 export type HarRequestUnderConstruction = Omit<HarRequest, 'httpVersion'> & Partial<Pick<HarRequest, 'httpVersion'>>;
-
-export interface HarEntryConstructionMetadata {
-	page: HarPageUnderConstruction | undefined;
-	requestWillBeSentTime: number;
-	receiveHeadersEnd: number;
-	wallTime: number;
-	frameId: string | undefined;
-	servedFromCache?: boolean;
-}
-
-export interface HasHarEntryConstructionMetadata {
-	constructionMetadata: HarEntryConstructionMetadata;
-}
-
-export type HarEntryUnderConstruction =
-	// Need to pull out the _
-	Omit<HarEntry, 'response' | 'timings' | 'request'> &
-//	Omit<HarEntry, 'response' | 'timings' | 'request' > & 
-	Partial<Pick<HarEntry, 'timings' | 'response'>> &
-	HasHarEntryConstructionMetadata &
-	{
-		request: HarRequestUnderConstruction;
-	}
 	
 export type HarHeader = NpmHarFormatTypes.Header;
 

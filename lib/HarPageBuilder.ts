@@ -45,16 +45,8 @@ export class HarPageBuilder {
 		return result;		
 	}
 
-	get wallTime() {
-		return this.earliestRequest.wallTime;
-	}
-
 	get timestamp() {
-		return this.earliestRequest.response.timing?.requestTime ?? this.earliestRequest.timestamp;
-	}
-
-	get wallTimeOfTimeStamp0() {
-		return this.wallTime - this.timestamp;
+		return this.earliestRequest.timestamp;
 	}
 
 	protected get startedDateTime() {

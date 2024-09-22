@@ -11,6 +11,7 @@ import type { PopulatedOptions } from "./Options.ts";
 import { WebSocketMessageOpcode, type HarEntry, type HarRequest, type HarResponse, type HarTimings, type WebSocketDirectionAndEvent, type WebSocketMessage } from "./types.ts";
 import type { HarPageBuilder } from "./HarPageBuilder.ts";
 import urlParser from "node:url";
+import type { TimeLord } from "./TimeLord.ts";
 
 
 function getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(startMs: number | undefined, endMs: number | undefined) {
@@ -43,7 +44,7 @@ export class HarEntryBuilder {
 
 	#assignedPage: HarPageBuilder | undefined;
 
-	constructor(public readonly orderArrived: number, readonly options: PopulatedOptions) {}
+	constructor(protected timelord: TimeLord, public readonly orderArrived: number, readonly options: PopulatedOptions) {}
 
 	get isValidForPageTimeCalculations() {
 		return this._requestWillBeSentEvent != null;
@@ -426,9 +427,13 @@ export class HarEntryBuilder {
 
 	/**
 	 * Event time in [seconds since arbitrary point in time we will call TimeStamp] [https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-MonotonicTime]
+	 * 
+	 * See also:
+	 * 	- https://developer.mozilla.org/en-US/docs/Web/API/DOMHighResTimeStamp
 	 */
 	get timestamp() {
 		return this.requestWillBeSentEvent.timestamp;
+		/* this.response.timing?.requestTime ?? */
 	}
 
 	/** Event time in [seconds since UNIX Epoch](https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-TimeSinceEpoch) */
@@ -437,17 +442,16 @@ export class HarEntryBuilder {
 	}
 
 	/**
-	 * This start time is guaranteed to be monotonically increasing within a page by starting from
-	 * the wallTime of the page and adding in the increase in the timestamp since the page-creation time.
+	 * Spec:
+	 * > startedDateTime [string] - Date and time stamp of the request start (ISO 8601 - YYYY-MM-DDThh:mm:ss.sTZD).
+	 * 
+	 * We interpret request start to be the requestTime from the timing object, rather than the timestamp of the
+	 * requestWillBeSentEvent, as the requestWillBeSent event occurs during the request, which may be after
+	 * the requested started by many milliseconds. Failing the presence of a timing object in the response,
+	 * we fall back to the timestamp on the requestWillBeSent event.
 	 */
-	get startedTimeInSeconds() {
-		if (this.page != null) {
-			// page.__wallTime + (timing.requestTime - page.__timestamp);
-			const timeSincePageTimeStamp = Math.max(0, (this.response.timing?.requestTime ?? this.timestamp) - this.page.timestamp);
-			return this.page.wallTime + timeSincePageTimeStamp;
-		} else {
-			return this.wallTime;
-		}
+	get requestStartTimeInSecondsFromUnixEpoch() {
+		return this.timelord.getApproximateWallTimeInSecondsFromUnixEpochFromMonotonicallyIncreasingTimestamp(this.timing?.requestTime ?? this.timestamp);
 	}
 
 	protected get time() {
@@ -460,7 +464,7 @@ export class HarEntryBuilder {
 		// if (this.options.mimicChromeHar) {
 		// 	return  dayjs.unix(this.startedTimeInSeconds).toISOString();
 		// }
-	 	return new Date(this.startedTimeInSeconds * 1000).toISOString();
+	 	return new Date(this.requestStartTimeInSecondsFromUnixEpoch * 1000).toISOString();
 	}
 
 	protected get cache(): NpmHarFormatTypes.Cache {
@@ -538,6 +542,7 @@ export class HarEntryBuilder {
 			_chunks: this.dataReceivedEvents.map( (e) => ({
 					ts: this.page == null ?
 						roundToThreeDecimalPlaces( (e.timestamp - this.timestamp) * 1000) :
+						// TODO -- verify that these timestamp offsets are really supposed to be offset from the page.
 						roundToThreeDecimalPlaces( (e.timestamp - this.page.timestamp) * 1000),
 					bytes: e.dataLength
 				} satisfies NpmHarFormatTypes.Chunk as NpmHarFormatTypes.Chunk

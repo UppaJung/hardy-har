@@ -35,6 +35,7 @@ export class HarBuilder {
 				},
 				pages,
 				entries,
+				comment: this.entriesBuilder.timelord.commentOnSkew
 			}
 		} as const satisfies HarArchive
 	}

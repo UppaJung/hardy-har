@@ -3,6 +3,8 @@
 	"deno.lint": true,
 	"cSpell.words": [
 		"Pageless",
-		"pageref"
+		"pageref",
+		"timelord",
+		"walltime"
 	]
 }

@@ -4,6 +4,7 @@ import type { PopulatedOptions } from "./Options.ts";
 import { type FrameId, isHarNetworkEventOrMetaEventName } from "./types.ts";
 import { calculateOnlyOnce } from "./util.ts";
 import type { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
+import { TimeLord } from "./TimeLord.ts";
 
 const hasGetResponseBodyResponseInResponse = (event: unknown): event is {requestId: DevToolsProtocol.Network.RequestId} & {response: DevToolsProtocol.Network.GetResponseBodyResponse} =>
 	event != null && typeof event === "object" && "requestId" in event && typeof event.requestId === "string"  &&
@@ -11,6 +12,7 @@ const hasGetResponseBodyResponseInResponse = (event: unknown): event is {request
 	"body" in event.response && typeof event.response.body === "string";
 
 export class HarEntriesBuilder {
+	timelord = new TimeLord();
 	allEntryBuilders: HarEntryBuilder[] = [];
 	entryBuildersByFrameId: Map<FrameId, HarEntryBuilder[]> = new Map();
 	entryBuildersByRequestId: Map<string, HarEntryBuilder> = new Map();
@@ -38,15 +40,15 @@ export class HarEntriesBuilder {
 			...frameIds.map(frameId => this.entryBuildersByFrameId.get(frameId) ?? [])
 		)
 		.filter( e => e.isValidForPageTimeCalculations)
-		.sort( this.options.mimicChromeHar ?
-			((a, b) => a.orderArrived - b.orderArrived ) :
-			((a, b) => a.requestWillBeSentEvent.timestamp - b.requestWillBeSentEvent.timestamp )
+		.sort(  // this.options.mimicChromeHar ?
+			// ((a, b) => a.orderArrived - b.orderArrived ) :
+			((a, b) => a.timestamp - b.timestamp )
 		);
 
 	#getOrCreateForRequestId(requestId: string) {
 		let entry = this.entryBuildersByRequestId.get(requestId);
 		if (entry == null) {
-			entry = new HarEntryBuilder(this.harEntryCreationIndex++, this.options);
+			entry = new HarEntryBuilder(this.timelord, this.harEntryCreationIndex++, this.options);
 			this.entryBuildersByRequestId.set(requestId, entry);
 			this.allEntryBuilders.push(entry);
 		}
@@ -75,6 +77,8 @@ export class HarEntriesBuilder {
 		switch (eventName) {
 			case "Network.requestWillBeSent": {
 				const {redirectResponse, ...event} = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
+				const {timestamp, wallTime} = event;
+				this.timelord.addTimestampWallTimePair({timestamp, wallTime})
 				const {requestId, frameId=""} = event;
 				let priorRedirects = 0;
 				const priorEntryForThisRequestId = this.entryBuildersByRequestId.get(requestId);
