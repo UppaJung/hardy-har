@@ -7,7 +7,7 @@ import {
 	type HarEventNameAndObject,
 	type DevToolsProtocolGetResponseBodyRequest,
 	type DevToolsProtocolGetResponseBodyResponse,
-	GetResponseBodyResponseEventName,
+	GetResponseBodyResponseMetaEventName,
 	isHarEventName,
   harFromNamedDebuggerEvents,
 } from "./index.ts";
@@ -35,8 +35,8 @@ export const recordBrowserTabToHarFromWithinExtension = async (
 			)) as DevToolsProtocolGetResponseBodyResponse | undefined;
 			if (responseBodyObj != null) {
 				debuggerEventArray.push({
-					eventName: GetResponseBodyResponseEventName,
-					event: {requestId, ...responseBodyObj} satisfies HarEvent<typeof GetResponseBodyResponseEventName>
+					eventName: GetResponseBodyResponseMetaEventName,
+					event: {requestId, ...responseBodyObj} satisfies HarEvent<typeof GetResponseBodyResponseMetaEventName>
 				});
 			}
 		}		

@@ -5,11 +5,11 @@ export type {Options} from "./Options.ts";
 export * from "./types.ts";
 export {
 	isHarNetworkEventName, isHarPageEventName, isHarNetworkOrPageEventName, isHarNetworkEventOrMetaEventName,
-	GetResponseBodyResponseEventName,
+	GetResponseBodyResponseMetaEventName,
 } from "./types.ts";
 
 export const harFromUntypedEventNameAndObjectTuples = HarBuilder.fromUntypedEventNameAndObjectTuples;
 export const harFromEventNameAndObjectTuples = HarBuilder.fromEventNameAndObjectTuples;
 export const harFromUntypedNamedDebuggerEvents = HarBuilder.fromUntypedNamedDebuggerEvents;
 export const harFromNamedDebuggerEvents = HarBuilder.fromNamedDebuggerEvents;
-export const fromChromeHarMessageParamsObjects = HarBuilder.fromChromeHarMessageParamsObjects;
+export const harFromChromeHarMessageParamsObjects = HarBuilder.fromChromeHarMessageParamsObjects;

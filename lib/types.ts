@@ -138,10 +138,10 @@ const HarNetworkEventSet = new Set(HarNetworkEventNames);
 export const isHarNetworkEventName = (eventName: string): eventName is HarNetworkEventName =>
 	HarNetworkEventSet.has(eventName as HarNetworkEventName);
 
-export const GetResponseBodyResponseEventName =	"Network.getResponseBodyResponse" as const;
-export type GetResponseBodyResponseEventName = typeof GetResponseBodyResponseEventName;
+export const GetResponseBodyResponseMetaEventName =	"Network.getResponseBodyResponse" as const;
+export type GetResponseBodyResponseMetaEventName = typeof GetResponseBodyResponseMetaEventName;
 const HarNetworkMetaEventNames = [
-	GetResponseBodyResponseEventName,
+	GetResponseBodyResponseMetaEventName,
 ] as const satisfies DebuggerNetworkMetaEventName[];
 export type HarNetworkMetaEventName = NonNullable<(typeof HarNetworkMetaEventNames)[number]>;
 const HarNetworkMetaEventSet = new Set(HarNetworkMetaEventNames);

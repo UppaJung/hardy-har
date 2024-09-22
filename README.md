@@ -16,7 +16,7 @@ import {
   type HarEventNameAndObject,
   type DevToolsProtocolGetResponseBodyRequest,
   type DevToolsProtocolGetResponseBodyResponse,
-  GetResponseBodyResponseEventName,
+  GetResponseBodyResponseMetaEventName,
   isHarEventName,
   harFromNamedDebuggerEvents,
 } from "jsr:@stuartschechter/hardy-har";
@@ -37,15 +37,18 @@ export const recordBrowserTabToHarFromWithinExtension = async (
     if (eventName === 'Network.loadingFinished') {
       // The chrome Network protocol doesn't provide response bodies unless you ask.
       const requestId = (event as HarEvent<typeof eventName>).requestId;
+      // Request the response body
       const responseBodyObj = (await (chrome.debugger.sendCommand(
         {tabId},
         "Network.getResponseBody",
         {requestId} satisfies DevToolsProtocolGetResponseBodyRequest)
       )) as DevToolsProtocolGetResponseBodyResponse | undefined;
       if (responseBodyObj != null) {
+        // Record a meta event consisting of the requestId and the response body, as if the Chrome DevTools protocol
+        // had been generous enough to volunteer this information without us begging for it.
         debuggerEventArray.push({
-          eventName: GetResponseBodyResponseEventName,
-          event: {requestId, ...responseBodyObj} satisfies HarEvent<typeof GetResponseBodyResponseEventName>
+          eventName: GetResponseBodyResponseMetaEventName,
+          event: {requestId, ...responseBodyObj} satisfies HarEvent<typeof GetResponseBodyResponseMetaEventName>
         });
       }
     }		
@@ -68,16 +71,16 @@ export const recordBrowserTabToHarFromWithinExtension = async (
 
 #### As a drop-in replacement for chrome-har
 
-Just replace `harFromMessages` with `fromChromeHarMessageParamsObjects`.
+Just replace `harFromMessages` with `harFromChromeHarMessageParamsObjects`.
 If you capture response bodies and attach them to another Network event,
 as you would for `chrome-har`, `hardy-har` will still find them.
 
 ```javascript
-import {fromChromeHarMessageParamsObjects} from "jsr:@stuartschechter/hardy-har";
+import {harFromChromeHarMessageParamsObjects} from "jsr:@stuartschechter/hardy-har";
 
 // ... follow chrome-har example to generate events and options
 
-fromChromeHarMessageParamsObjects(harEvents, options);
+harFromChromeHarMessageParamsObjects(harEvents, options);
 ```
 
 

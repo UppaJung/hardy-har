@@ -1,7 +1,7 @@
 import { describe, it as test } from "jsr:@std/testing/bdd";
 import { expect } from "jsr:@std/expect";
 
-import { type HarEntry, harFromChromeHarMessageParams, type Options } from "../lib/index.ts";
+import { type HarEntry, harFromChromeHarMessageParamsObjects, type Options } from "../lib/index.ts";
 import type { HarEntryGenerated } from "../lib/HarEntryBuilder.ts";
 import * as ch from 'npm:chrome-har@0.13.5';
 // spell-checker: disable
@@ -71,7 +71,7 @@ const filenames = await perflogs();
 
 async function parsePerflog(perflogPath: string, options?: Options) {
   const log = JSON.parse(await Deno.readTextFile(perflogPath));
-  const har = harFromChromeHarMessageParams(log, options);
+  const har = harFromChromeHarMessageParamsObjects(log, options);
   return har;
 }
 
@@ -86,7 +86,7 @@ describe('Mimimcs chrome-har', () => {
   ) {
     test (`${filename}`, async () => {
       const debuggerLog = JSON.parse(await Deno.readTextFile(perfLogPath(filename)));
-      const hardyHar = harFromChromeHarMessageParams(debuggerLog, options);
+      const hardyHar = harFromChromeHarMessageParamsObjects(debuggerLog, options);
       expect(sortedByRequestTime(hardyHar.log.entries)).toEqual(hardyHar.log.entries);
       validateRequestsOnSameConnectionDoNotOverlap(hardyHar.log.entries);
       const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as NpmHarFormatTypes.Har;
