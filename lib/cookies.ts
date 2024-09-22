@@ -2,15 +2,14 @@
 //   https://github.com/sitespeedio/chrome-har/blob/5b076f8c8e578e929670761dcc31345e4e87103c/index.js
 
 import type {DevToolsProtocol} from "./types.ts";
-import {Cookie} from 'npm:tough-cookie';
-import dayjs from 'npm:dayjs';
+import {Cookie} from "npm:tough-cookie";
 import type {NpmHarFormatTypes as NpmHarFormatTypes} from './types.ts';
 
 export const networkCookieToHarFormatCookie = ({expires, ...rest}: DevToolsProtocol.Network.Cookie): NpmHarFormatTypes.Cookie => ({
 	...rest,
 	expires: (expires as unknown as string) === 'Infinity'
         ? undefined
-        : dayjs(expires).toISOString(),
+        : new Date(expires * 1000).toISOString(),
 })
 
 export const toughCookieObjectToHarFormatCookie = ({
@@ -21,9 +20,9 @@ export const toughCookieObjectToHarFormatCookie = ({
     path: toughCookie.path ?? undefined, // must be undefined, not null, to exclude empty path
     domain: toughCookie.domain ?? undefined, // must be undefined, not null, to exclude empty domain
     expires:
-      expires === 'Infinity'
+      expires === 'Infinity' || expires == null
         ? undefined
-        : dayjs(expires).toISOString(),
+        : expires.toISOString(),
     httpOnly,
     secure
   }) satisfies NpmHarFormatTypes.Cookie;

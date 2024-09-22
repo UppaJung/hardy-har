@@ -3,6 +3,8 @@
 	"deno.lint": true,
 	"cSpell.words": [
 		"Debuggee",
+		"Hedenskog",
+		"Lidskog",
 		"Pageless",
 		"pageref",
 		"timelord",
