@@ -1,4 +1,4 @@
-import type {DevToolsProtocol} from "./types.ts";
+import type {DevToolsProtocol, HarEntry} from "./types.ts";
 import { HarEntryBuilder } from "./HarEntryBuilder.ts";
 import type { PopulatedOptions } from "./Options.ts";
 import { type FrameId, isHarNetworkEventOrMetaEventName } from "./types.ts";
@@ -12,7 +12,7 @@ const hasGetResponseBodyResponseInResponse = (event: unknown): event is {request
 	"body" in event.response && typeof event.response.body === "string";
 
 export class HarEntriesBuilder {
-	timelord = new TimeLord();
+	timelord: TimeLord = new TimeLord();
 	allEntryBuilders: HarEntryBuilder[] = [];
 	entryBuildersByFrameId: Map<FrameId, HarEntryBuilder[]> = new Map();
 	entryBuildersByRequestId: Map<string, HarEntryBuilder> = new Map();
@@ -20,22 +20,22 @@ export class HarEntriesBuilder {
 
 	constructor(readonly options: PopulatedOptions) { }
 
-	getCompletedHarEntryBuilders = calculateOnlyOnce( () =>
+	getCompletedHarEntryBuilders: () => HarEntryBuilder[] = calculateOnlyOnce( () =>
 		this.allEntryBuilders.filter(e => e.isValidForInclusionInHarArchive) );
 
-	getCompletedHarEntryBuildersSortedByRequestTime = calculateOnlyOnce( () =>
+	getCompletedHarEntryBuildersSortedByRequestTime: () => HarEntryBuilder[] = calculateOnlyOnce( () =>
 		this.getCompletedHarEntryBuilders()
 			.toSorted( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds )
 	);
 
-	getCompletedHarEntries = calculateOnlyOnce( () => {
+	getCompletedHarEntries: () => HarEntry[] = calculateOnlyOnce( () => {
 		const sortedValidEntryBuilders = this.getCompletedHarEntryBuildersSortedByRequestTime();
 		const harEntries = sortedValidEntryBuilders.map((entry) => entry.entry);
 		const nonNullHarEntries = harEntries.filter(entry => entry != null)
 		return nonNullHarEntries;
 	});
 
-	getHarEntriesBuildersForFrameIdsSortedByRequestSentTimeStamp = (...frameIds: FrameId[]) =>
+	getHarEntriesBuildersForFrameIdsSortedByRequestSentTimeStamp = (...frameIds: FrameId[]): HarEntryBuilder[] =>
 		([] as HarEntryBuilder[]).concat(
 			...frameIds.map(frameId => this.entryBuildersByFrameId.get(frameId) ?? [])
 		)
@@ -55,7 +55,7 @@ export class HarEntriesBuilder {
 		return entry;
 	}
 
-	onNetworkEvent = (eventName: string, untypedEvent: unknown) => {
+	onNetworkEvent = (eventName: string, untypedEvent: unknown): void => {
 		if (!isHarNetworkEventOrMetaEventName(eventName)) {
 			// console.log(`Ignoring event ${eventName}`);
 		}

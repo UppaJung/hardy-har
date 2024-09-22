@@ -1,9 +1,7 @@
-import type { Options } from "./index.ts";
-import type { NpmHarFormatTypes } from "./types.ts";
-// FIXME remove
-import url from "node:url";
+import type { Options } from "./Options.ts";
+import type { HarPostData, NpmHarFormatTypes } from "./types.ts";
 
-export const calculateOnlyOnce = <T>(calculation: () => T ) => {
+export const calculateOnlyOnce = <T>(calculation: () => T ): () => T => {
 	let hasBeenCalculated: boolean = false;
 	let result: T | undefined;
 	return () => {
@@ -41,12 +39,17 @@ export function toNameValuePairs(object: Record<string, string | string[] | unde
 }
 
 export function parseUrlEncoded(data: string) {
-	// FIXME -- deprecated. use only for testing compatibility with chrome-har
-	const params = url.parse(`?${data}`, true).query;
-	return toNameValuePairs(params);
+	try {
+		const result: NpmHarFormatTypes.QueryString[] =
+		 [...new URL(`http://localhost/?${data}`).searchParams]
+		 .map(( [name, value] ) => ({name, value}));
+		 return result;
+	} catch {
+		return [];
+	}
 }
 
-export function parsePostData(contentType: string | undefined, postData: string | undefined, options: Options) {
+export function parsePostData(contentType: string | undefined, postData: string | undefined, options: Options): HarPostData | undefined {
 	if (!isNonEmptyString(contentType) || !isNonEmptyString(postData)) {
 		return undefined;
 	}

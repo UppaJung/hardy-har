@@ -1,4 +1,4 @@
-import type {DevToolsProtocol, NpmHarFormatTypes} from "./types.ts";
+import type {ConnectionIdString, DevToolsProtocol, FrameId, HarChunk, HarPostData, ISODateTimeString, Milliseconds, MonotonicTimeInSeconds, NpmHarFormatTypes, SecondsFromUnixEpoch} from "./types.ts";
 import { networkCookieToHarFormatCookie, parseCookie, parseRequestCookies, parseResponseCookies } from "./cookies.ts";
 import { calculateRequestHeaderSize, calculateResponseHeaderSize, getHeaderValue, headersRecordToArrayOfHarHeaders } from "./headers.ts";
 import {
@@ -8,10 +8,11 @@ import {
 	roundToThreeDecimalPlaces
 } from "./util.ts";
 import type { PopulatedOptions } from "./Options.ts";
-import { WebSocketMessageOpcode, type HarEntry, type HarRequest, type HarResponse, type HarTimings, type WebSocketDirectionAndEvent, type WebSocketMessage } from "./types.ts";
+import { WebSocketMessageOpcode, type HarRequest, type HarResponse, type HarTimings, type WebSocketDirectionAndEvent, type HarWebSocketMessage } from "./types.ts";
 import type { HarPageBuilder } from "./HarPageBuilder.ts";
 import urlParser from "node:url";
 import type { TimeLord } from "./TimeLord.ts";
+import type { HarEntry } from "./types.ts";
 
 
 function getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(startMs: number | undefined, endMs: number | undefined) {
@@ -44,13 +45,13 @@ export class HarEntryBuilder {
 
 	#assignedPage: HarPageBuilder | undefined;
 
-	constructor(protected timelord: TimeLord, public readonly orderArrived: number, readonly options: PopulatedOptions) {}
+	constructor(private timelord: TimeLord, public readonly orderArrived: number, readonly options: PopulatedOptions) {}
 
-	get isValidForPageTimeCalculations() {
+	get isValidForPageTimeCalculations(): boolean {
 		return this._requestWillBeSentEvent != null;
 	}
 
-	get isValidForInclusionInHarArchive() {
+	get isValidForInclusionInHarArchive(): boolean {
 		const hasNoRequest = this._requestWillBeSentEvent == null;
 		const hasNoResponse = this._response == null;
 		if (hasNoRequest || hasNoResponse){
@@ -72,55 +73,55 @@ export class HarEntryBuilder {
 		return true;
 	}
 
-	get requestWillBeSentEvent() {
+	private get requestWillBeSentEvent() {
 		if (this._requestWillBeSentEvent != null) {
 			return this._requestWillBeSentEvent;
 		}
 		throw new Error("Attempt to access requestWillBeSentEvent before it is set");
 	}
 
-	assignToPage = (page: HarPageBuilder) => {
+	assignToPage = (page: HarPageBuilder): void => {
 		this.#assignedPage = page;
 	}
 
-	get page() {
+	private get page() {
 		return this.#assignedPage;
 	}
 
-	get frameId() {
+	get frameId(): FrameId | undefined {
 		return this.requestWillBeSentEvent?.frameId;
 	}
 
-	protected get _response() {
+	private get _response() {
 		if (this.responseReceivedEvent != null && this.redirectResponse != null) {
 			throw new Error("Unexpected state with event having two types of responses.");
 		}
 		return this.responseReceivedEvent?.response ?? this.redirectResponse;
 	}
 
-	get response() {
+	private get response() {
 		if (this._response == null) {
 			throw new Error("Attempt to access a response even though there was no responseReceivedEvent or requestWillBeSent.redirectResponse event");
 		}
 		return this._response;
 	}
 
-	protected get responseBody() {
+	private get responseBody() {
 		return this.getResponseBodyResponse?.body;
 	}
-	protected get responseBase64Encoded() {
+	private get responseBase64Encoded() {
 		return this.getResponseBodyResponse?.base64Encoded;
 	}
 
-	protected get httpVersion(): string | undefined {
+	private get httpVersion(): string | undefined {
 		return this.response.protocol;
 	}
 
-	protected get isHttp1x() {
+	private get isHttp1x() {
 		return isHttp1x(this.httpVersion);
 	}
 
-	protected get responseHeadersText() {
+	private get responseHeadersText() {
 		// extraInfo.headersText provides "Raw response header text as it was received over the wire."
 		return this.responseReceivedExtraInfoEvent?.headersText ?? 
 			// deprecated, but here for backward compatibility
@@ -132,27 +133,27 @@ export class HarEntryBuilder {
 	 * > *headersSize - The size of received response-headers is computed only from headers that are really received from the server.
 	 * > Additional headers appended by the browser are not included in this number, but they appear in the list of header objects.
 	 */
-	protected get responseHeadersSize() {
+	private get responseHeadersSize() {
 		return (this.responseHeadersText != null) ? this.responseHeadersText.length :
 			(this.isHttp1x && !this.response.fromDiskCache && !this.response.fromEarlyHints) ?
 			calculateResponseHeaderSize(this.response) :
 			-1;
 	}
 
-	protected get networkResponseHeadersObj() {
+	private get networkResponseHeadersObj() {
 		return this.responseReceivedExtraInfoEvent?.headers ?? this.response.headers;
 	}
 
-	protected get responseHeaders() {
+	private get responseHeaders() {
 		return headersRecordToArrayOfHarHeaders(this.networkResponseHeadersObj);
 	}
 
-	getResponseHeader = (caseInsensitiveName: string) => {
+	private getResponseHeader = (caseInsensitiveName: string) => {
 		const nameLc = caseInsensitiveName.toLowerCase();
 		return this.responseHeaders.find( v => v.name.toLowerCase() == nameLc);
 	}
 
-	get responseEncodedDataLength() {
+	private get responseEncodedDataLength(): number | undefined {
 		return this.loadingFinishedEvent?.encodedDataLength; // ?? this.response.encodedDataLength;
 	}
 
@@ -173,7 +174,7 @@ export class HarEntryBuilder {
 	 * 
 	 * The only reliable source seems to be the content encoding.
 	 */
-	protected get responseBodySize() {
+	private get responseBodySize() {
 		// If we have a response body, we can be certain of its size.
 		if (this.responseBody != null) {
 			return this.responseBody.length;
@@ -201,7 +202,7 @@ export class HarEntryBuilder {
 		return -1;
 	}
 
-	protected get responseCookeHeader() {
+	private get responseCookeHeader() {
 		const {networkResponseHeadersObj: responseHeaders} = this;
 		if (responseHeaders == null) return undefined;
 		if (this.options.mimicChromeHar) {
@@ -212,7 +213,7 @@ export class HarEntryBuilder {
 		return getHeaderValue(responseHeaders, 'Set-Cookie');
 	}
 
-	protected get responseCookies() {
+	private get responseCookies() {
 		const cookieHeader = this.responseCookeHeader;
 		if (cookieHeader == null) return undefined;
 		const responseCookies = parseResponseCookies(cookieHeader);
@@ -224,25 +225,25 @@ export class HarEntryBuilder {
 		return responseCookies.filter( c => !setOfBlockedCookieNames.has(c.name));
 	}
 
-	protected get locationHeaderValue() {
+	private get locationHeaderValue() {
 		const {networkResponseHeadersObj: responseHeaders} = this;
 		if (responseHeaders == null) return undefined;
 		return this.networkResponseHeadersObj == null ? undefined :
 			getHeaderValue(this.networkResponseHeadersObj, 'Location');
 	}
 
-	protected get requestId() {
+	private get requestId() {
 			// For chrome-har compatibility
 			const suffix = (this.options.mimicChromeHar && this.redirectResponse != null) ? 'r' : '';
 			return this.requestWillBeSentEvent.requestId + suffix;
 
 	}
 
-	protected get request() {
+	private get request() {
 		return this.requestWillBeSentEvent.request;
 	}
 
-	protected get requestHeaders(): DevToolsProtocol.Network.Headers {
+	private get requestHeaders(): DevToolsProtocol.Network.Headers {
 		if (this.options.mimicChromeHar) {
 			return this.response.requestHeaders ??
 			// Ordering matters below as chrome-har will do a linear search through headers and find the earliest ones first.
@@ -252,11 +253,11 @@ export class HarEntryBuilder {
 		return { ...this.requestWillBeSentExtraInfoEvent?.headers, ...this.response.requestHeaders, ...this.request.headers};
 	}
 
-	protected get requestHarHeaders() {
+	private get requestHarHeaders() {
 		return headersRecordToArrayOfHarHeaders(this.requestHeaders);
 	}
 
-	protected get requestCookieHeader() {
+	private get requestCookieHeader() {
 		// if (this.options.mimicChromeHar) {
 		// 	// Chrome-har doesn't look for cookies in the `Cookie` header in the requestWillBeSentExtraInfoEvent
 		// 	return getHeaderValue(this.request.headers, 'Cookie') ?? 
@@ -265,7 +266,7 @@ export class HarEntryBuilder {
 		return getHeaderValue(this.requestHeaders, 'Cookie');
 	}
 
-	protected get requestCookies() {
+	private get requestCookies() {
 		// response.requestHeaders, just use cookies from that
 
 		const blockedCookies = this.responseReceivedExtraInfoEvent?.blockedCookies ?? [];
@@ -285,7 +286,7 @@ export class HarEntryBuilder {
 	return [...cookiesFromHeaderNotBetterDescribedByAssociatedCookies, ...associatedCookies];
 	}
 
-	protected get requestHeadersSize() {
+	private get requestHeadersSize() {
 		const {response, request, httpVersion} = this;
 		if (response != null && response.requestHeadersText != null) {
 			return response.requestHeadersText.length;
@@ -297,35 +298,35 @@ export class HarEntryBuilder {
 		}
 	}
 
-	protected get requestBodySize() {
+	private get requestBodySize() {
 		return this.request.postData?.length ?? 0;
 	}
 
-	protected get requestParsedUrl() {
+	private get requestParsedUrl() {
 		return urlParser.parse(
 				this.request.url + (this.request.urlFragment ?? ''),
 				true
 			)
 	}
 
-	get requestUrl() {
+	get requestUrl(): string {
 		return urlParser.format(this.requestParsedUrl);
 	}
 
-	protected get queryString() {
+	private get queryString(): NpmHarFormatTypes.QueryString[] {
 		return toNameValuePairs(this.requestParsedUrl.query);
 	}
 
-	protected get postData() {
+	private get postData(): HarPostData | undefined {
 		const requestHeaders = this.options.mimicChromeHar ? this.requestWillBeSentEvent.request.headers : this.request.headers;
 		return parsePostData(getHeaderValue(requestHeaders, 'Content-Type'), this.request.postData, this.options);
 	}
 
-	protected get _isLinkPreloadObj() {
-		return this.request.isLinkPreload ? {_isLinkPreload: true} : {};
+	private get _isLinkPreloadObj(): {_isLinkPreload: true} | undefined {
+		return this.request.isLinkPreload ? {_isLinkPreload: true} : undefined;
 	}
 
-	protected get method() {
+	private get method(): string {
 		return this.request.method;
 	}
 
@@ -334,7 +335,7 @@ export class HarEntryBuilder {
 	 * > size [number] - Length of the returned content in bytes. Should be equal to response.bodySize if there is no compression and
 	 * bigger when the content has been compressed.
 	 */
-	get contentSize() {
+	get contentSize(): number {
 		if (this.dataReceivedEvents.length > 0) {
 			// calculate the content length by summing data received events
 			const sumOfDataReceivedDataLengths = this.dataReceivedEvents
@@ -343,19 +344,19 @@ export class HarEntryBuilder {
 		}
 		// if not data receivedEvents were received, see if the responseBodyText
 		// is set and, if so, take it's length.
-		// TODO - double check that this is guaranteed to be one byte per char.
+		// @UppaJung TODO - double check that this is guaranteed to be one byte per char.
 		return this.responseBody?.length ?? 0;
 	}
 
-	get compression_obj() {
+	private get compression_obj(): {compression: number} | undefined {
 		if (this.options.mimicChromeHar || this.responseEncodedDataLength == null) {
-			return {};
+			return undefined;
 		}
 		const compression = this.contentSize - this.responseEncodedDataLength;
-		return compression > 0 ? {compression} : {};
+		return compression > 0 ? {compression} : undefined;
 	}
 
-	protected get responseContent() {
+	private get responseContent() {
 		const {
 			contentSize, compression_obj
 		} = this;
@@ -380,15 +381,15 @@ export class HarEntryBuilder {
 				
 	}
 
-	protected get _initialPriority() {
+	private get _initialPriority():  DevToolsProtocol.Network.ResourcePriority {
 		return this.request.initialPriority;
 	}
 
-	protected get _priority() {
+	private get _priority(): DevToolsProtocol.Network.ResourcePriority {
 		return this.resourceChangedPriorityEvent?.newPriority ?? this._initialPriority;
 	}
 
-	protected get initiatorFields() {
+	private get initiatorFields(): Partial<HarEntry> {
 		const {initiator} = this.requestWillBeSentEvent;
 		const baseFields = {
 			_initiator_detail: JSON.stringify(initiator),
@@ -416,12 +417,12 @@ export class HarEntryBuilder {
 		return baseFields;
 	}
 
-	protected get resourceType() {
+	private get resourceType(): NpmHarFormatTypes.Entry["_resourceType"] | undefined {
 		// chrome-har team notes: Chrome's DevTools Frontend returns this field in lower case
-		return this.requestWillBeSentEvent?.type?.toLowerCase() ?? '';
+		return (this.requestWillBeSentEvent?.type?.toLowerCase() ?? undefined) as NpmHarFormatTypes.Entry["_resourceType"] | undefined;
 	}
 
-	protected get isSupportedProtocol() {
+	private get isSupportedProtocol(): boolean {
 		const {url} = this.request;
 		return /^https?:/.test(url) || 
 			// web sockets are supported, except when mimicking chrome-har, which did not support web sockets.
@@ -434,13 +435,13 @@ export class HarEntryBuilder {
 	 * See also:
 	 * 	- https://developer.mozilla.org/en-US/docs/Web/API/DOMHighResTimeStamp
 	 */
-	get timestamp() {
+	get timestamp(): MonotonicTimeInSeconds {
 		return this.requestWillBeSentEvent.timestamp;
 		/* this.response.timing?.requestTime ?? */
 	}
 
 	/** Event time in [seconds since UNIX Epoch](https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-TimeSinceEpoch) */
-	get wallTime() {
+	get wallTime(): SecondsFromUnixEpoch {
 		return this.requestWillBeSentEvent.wallTime;
 	}
 
@@ -453,24 +454,24 @@ export class HarEntryBuilder {
 	 * the requested started by many milliseconds. Failing the presence of a timing object in the response,
 	 * we fall back to the timestamp on the requestWillBeSent event.
 	 */
-	get requestStartTimeInSecondsFromUnixEpoch() {
+	private get requestStartTimeInSecondsFromUnixEpoch(): SecondsFromUnixEpoch {
 		return this.timelord.getApproximateWallTimeInSecondsFromUnixEpochFromMonotonicallyIncreasingTimestamp(this.timing?.requestTime ?? this.timestamp);
 	}
 
-	protected get time() {
+	private get time(): Milliseconds {
 		const {blocked=0, dns=0, connect=0, send=0, wait, receive} = this.timings;
 		return Math.max(0, blocked) + Math.max(0, dns) + Math.max(0, connect) + send + wait + receive;
 	}
 
 
-	get startedDateTime(): string {
+	get startedDateTime(): ISODateTimeString {
 		// if (this.options.mimicChromeHar) {
 		// 	return  dayjs.unix(this.startedTimeInSeconds).toISOString();
 		// }
-	 	return new Date(this.requestStartTimeInSecondsFromUnixEpoch * 1000).toISOString();
+	 	return new Date(this.requestStartTimeInSecondsFromUnixEpoch * 1000).toISOString() as ISODateTimeString;
 	}
 
-	protected get cache(): NpmHarFormatTypes.Cache {
+	private get cache(): NpmHarFormatTypes.Cache {
 		if (this.requestServedFromCacheEvent == null) return {};
 		return {
 			beforeRequest: {
@@ -483,7 +484,7 @@ export class HarEntryBuilder {
 	}
 
 
-	protected get serverIPAddress() {
+	private get serverIPAddress(): string | undefined {
 		const {remoteIPAddress} = this.response;
 		if (remoteIPAddress == null || typeof remoteIPAddress !== "string") return undefined;
 		// Per chrome-har documentation:
@@ -491,61 +492,61 @@ export class HarEntryBuilder {
 		return remoteIPAddress.replace(/^\[|]$/g, '');
 	}
 
-	protected get connection() {
+	private get connection(): ConnectionIdString {
 		return this.response.connectionId.toString();
 	}
 
-	protected get timing() {
+	private get timing(): DevToolsProtocol.Network.ResourceTiming | undefined {
 		return this.response.timing;
 	}
 
-	get requestTimeInSeconds() {
+	get requestTimeInSeconds(): MonotonicTimeInSeconds {
 		return this.response.timing?.requestTime ?? (() => {throw new Error("timing not set")})(); //  ?? this.requestWillBeSentEvent.timestamp;
 	}
 
 	/**
 	 * A reference time in units of seconds
 	 */
-	protected	get _requestTime() {
+	private	get _requestTime(): MonotonicTimeInSeconds {
 		return this.requestTimeInSeconds;
 	}
 
 
-	protected	get time_obj() {
-		const timings = this.timings;
-		if (timings == null) return {};
-		const {blocked, dns, connect, send, wait, receive, /* ssl // excluded, see not below  */} = timings;
-		// Per spec:
-		// > time [number] - Total elapsed time of the request in milliseconds. This is the sum of all timings available in the timings object (i.e. not including -1 values).
-		//
-		// However: the spec is wrong in that SSL time is encompassed in the connect time, and so including them would add it twice.
-		//
-		// So, we'll sum up the values other than SSL all using reduce to only add values that are > 0.
-		//
-		const timeMs = [blocked, dns, connect, send, wait, receive, /* ssl // excluded, see note above */].reduce<number>(
-			(sum, val) => val != null && val > 0 ? sum + val : sum,
-			0
-		);
-		return {time: timeMs};
-	}
+	// private	get time_obj(): {time: Milliseconds} | undefined {
+	// 	const timings = this.timings;
+	// 	if (timings == null) return undefined;
+	// 	const {blocked, dns, connect, send, wait, receive, /* ssl // excluded, see not below  */} = timings;
+	// 	// Per spec:
+	// 	// > time [number] - Total elapsed time of the request in milliseconds. This is the sum of all timings available in the timings object (i.e. not including -1 values).
+	// 	//
+	// 	// However: the spec is wrong in that SSL time is encompassed in the connect time, and so including them would add it twice.
+	// 	//
+	// 	// So, we'll sum up the values other than SSL all using reduce to only add values that are > 0.
+	// 	//
+	// 	const timeMs = [blocked, dns, connect, send, wait, receive, /* ssl // excluded, see note above */].reduce<number>(
+	// 		(sum, val) => val != null && val > 0 ? sum + val : sum,
+	// 		0
+	// 	);
+	// 	return {time: timeMs};
+	// }
 
-	protected get wasHttp2Push() {
+	private get wasHttp2Push(): boolean {
 		return (this._response?.timing?.pushStart ?? 0) > 0;
 	}
 
-	protected	get _was_pushed_obj() {
+	private	get _was_pushed_obj(): {readonly _was_pushed?: 1} {
 		return this.wasHttp2Push ? {_was_pushed: 1} : {};
 	}
 
-	protected get _chunks_obj() {
+	private get _chunks_obj(): {readonly _chunks?: HarChunk[]} {
 		if (this.dataReceivedEvents == null || this.dataReceivedEvents.length == 0) {
-			return {}
+			return {};
 		}
 		return {
 			_chunks: this.dataReceivedEvents.map( (e) => ({
 					ts: this.page == null ?
 						roundToThreeDecimalPlaces( (e.timestamp - this.timestamp) * 1000) :
-						// TODO -- verify that these timestamp offsets are really supposed to be offset from the page.
+						// @UppaJung TODO -- verify that these timestamp offsets are really supposed to be offset from the page.
 						roundToThreeDecimalPlaces( (e.timestamp - this.page.timestamp) * 1000),
 					bytes: e.dataLength
 				} satisfies NpmHarFormatTypes.Chunk as NpmHarFormatTypes.Chunk
@@ -553,9 +554,9 @@ export class HarEntryBuilder {
 		}
 	}
 
-	get pagerefObj() {
-		if (this.page == null) {
-			return {}
+	get pagerefObj(): {pageref?: string} {
+		if (this.page == null || this.page.id == null) {
+			return {};
 		} else {
 			return {pageref: this.page.id};
 		}
@@ -564,7 +565,7 @@ export class HarEntryBuilder {
 	/**
 	 * An entry field containing all the web socket messages sent over a requestId generated via the "ws:" protocol.
 	 */
-	get _webSocketMessagesObj() {
+	get _webSocketMessagesObj(): {readonly _webSocketMessages?: HarWebSocketMessage[]} {
 		if (this.webSocketEvents.length == 0 || this.options.mimicChromeHar) {
 			return {};
 		}
@@ -579,11 +580,11 @@ export class HarEntryBuilder {
 				opcode: event.response.opcode === 1 ? WebSocketMessageOpcode.Utf8Text : WebSocketMessageOpcode.Base64EncodedBinary,
 				time: event.timestamp,
 				data: event.response.payloadData
-			} as WebSocketMessage))
+			} as HarWebSocketMessage))
 		};
 	}
 
-	protected get timings(): HarTimings {
+	private get timings(): HarTimings {
 		// Important notes because these damn protocols use names that don't specify their units
 		// all timestamps in seconds
 		// all fields of response.timing are in milliseconds
@@ -619,7 +620,7 @@ export class HarEntryBuilder {
 		};
 	}
 
-	protected get harRequest() {
+	private get harRequest(): HarRequest {
 		return {
 			method: this.method,
 			url: this.requestUrl,
@@ -634,7 +635,7 @@ export class HarEntryBuilder {
 		} as const satisfies HarRequest
 	}
 
-	protected get harResponse() {
+	private get harResponse(): HarResponse {
 		const { response } = this;
 		const _transferSize = this.options.mimicChromeHar ?
 			(this.loadingFinishedEvent?.encodedDataLength ?? this.response.encodedDataLength) :
@@ -661,9 +662,14 @@ export class HarEntryBuilder {
 	/**
 	 * The final HarEntry object **except for `pageRef`**, which should be populated later.
 	 */
-	get entry() {
+	get entry(): HarEntry | undefined {
 		if (!this.isValidForInclusionInHarArchive) return undefined;
 		return {
+			...this.initiatorFields,
+			...this.pagerefObj,
+			...this._chunks_obj,
+			...this._was_pushed_obj,
+			...this._webSocketMessagesObj,
 			request: this.harRequest,
 			response: this.harResponse,
 			timings: this.timings,
@@ -677,17 +683,8 @@ export class HarEntryBuilder {
 			_priority: this._priority,
 			_resourceType: this.resourceType,
 			_requestTime: this._requestTime,
-			...this.pagerefObj,
-			...this._chunks_obj,
-			...this.time_obj,
-			...this._was_pushed_obj,
-			...this.initiatorFields,
-			...this._webSocketMessagesObj,
 			// turn on to make it possible to get back to the builder from entries when you are in the debugger.
 			// ...({__builder: this} as {}),
-		} as const satisfies HarEntry;
+		};
 	}
-
 }
-
-export type HarEntryGenerated = NonNullable<HarEntryBuilder["entry"]>

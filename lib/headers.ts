@@ -89,15 +89,6 @@ export const getHarHeaderValue = <T extends Record<string, string>>(headers: Npm
 	return (headers ?? []).find(({name}) => name.toLowerCase() === headerToFindLc)?.value;
 }
 
-// export const getHeaderValue = <T extends Record<string, string>>(headers: T, headerToFind: string): string | undefined => {
-// 	if (!headers) {
-// 		return;
-// 	}
-// 	const headerToFindLc = headerToFind.toLowerCase();
-// 	const matchingKey = Object.keys(headers).find(key => key.toLowerCase() === headerToFindLc);
-// 	return headers[matchingKey as keyof T];
-// }
-
 export const getHeaderValue = (headers: DevToolsProtocol.Network.Headers, headerToFind: string) => {
 	const headerToFindLc = headerToFind.toLowerCase();
 	return Object.entries(headers).find(([name]) => name.toLowerCase() === headerToFindLc)?.[1];

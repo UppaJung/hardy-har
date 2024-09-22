@@ -3,7 +3,7 @@
 
 import type {DevToolsProtocol} from "./types.ts";
 import {Cookie} from "npm:tough-cookie";
-import type {NpmHarFormatTypes as NpmHarFormatTypes} from './types.ts';
+import type {NpmHarFormatTypes} from './types.ts';
 
 export const networkCookieToHarFormatCookie = ({expires, ...rest}: DevToolsProtocol.Network.Cookie): NpmHarFormatTypes.Cookie => ({
 	...rest,
@@ -27,7 +27,7 @@ export const toughCookieObjectToHarFormatCookie = ({
     secure
   }) satisfies NpmHarFormatTypes.Cookie;
 
-export function parseCookie(cookieString: string) {
+export function parseCookie(cookieString: string): NpmHarFormatTypes.Cookie | undefined {
   const cookie = Cookie.parse(cookieString);
   if (!cookie) {
     return undefined;
@@ -36,7 +36,7 @@ export function parseCookie(cookieString: string) {
 }
 
 const parseCookiesSeparatedBy = (delimiterSeparatingCookieEntries: string) =>
-	(header: string) =>
+	(header: string): NpmHarFormatTypes.Cookie[] =>
 		header
     	.split(delimiterSeparatingCookieEntries).filter(x => x != null)
     	.map(parseCookie).filter(x => x != null)

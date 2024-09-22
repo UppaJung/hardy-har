@@ -5,7 +5,7 @@ export interface PopulatedOptions {
 	mimicChromeHar: boolean;
 }
 export type Options = Partial<PopulatedOptions>;
-export const defaultOptions = {
+export const defaultOptions: PopulatedOptions = {
 	includeResourcesFromDiskCache: false,
 	includeTextFromResponseBody: false,
 	mimicChromeHar: false,

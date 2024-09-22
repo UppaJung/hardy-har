@@ -1,5 +1,6 @@
 import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
-import type { FrameId, HarPage, DevToolsProtocol, NpmHarFormatTypes} from "./types.ts";
+import type { HarEntryBuilder } from "./HarEntryBuilder.ts";
+import type { FrameId, HarPage, DevToolsProtocol, HarPageTimings, Timestamp, ISODateTimeString} from "./types.ts";
 import { calculateOnlyOnce, roundToThreeDecimalPlaces, } from "./util.ts";
 
 export class HarPageBuilder {
@@ -17,19 +18,19 @@ export class HarPageBuilder {
 		this.frameIds = new Set<FrameId>(frameIds);
 	}
 
-	addFrameId = (frameId: FrameId) => {
+	addFrameId = (frameId: FrameId): void => {
 		this.frameIds.add(frameId);
 	}
 
-	protected get title() {
+	protected get title(): string {
 		return this.frameRequestedNavigationEvent?.url ?? this.navigatedWithinDocumentEvent?.url ?? this.earliestRequest.requestUrl ?? "unknown";
 	}
 
-	#getEarliestRequest = calculateOnlyOnce( () => 
+	#getEarliestRequest: () => HarEntryBuilder = calculateOnlyOnce( () => 
 		this.harEntriesBuilder.getHarEntriesBuildersForFrameIdsSortedByRequestSentTimeStamp(...this.frameIds)[0]
 	);
 
-	get isValid() {
+	get isValid(): boolean {
 		return this.#getEarliestRequest() != null;
 	}
 
@@ -37,7 +38,7 @@ export class HarPageBuilder {
 	 * To be used only after all builders' data has been populated and no new
 	 * data is to be added.
 	 */
-	protected get earliestRequest() {
+	protected get earliestRequest(): HarEntryBuilder {
 		const result = this.#getEarliestRequest();
 		if (result == null) {
 			throw new Error('Page is not valid as no request found for it. Property Page.earliestRequest should not have been accessed.');
@@ -45,15 +46,15 @@ export class HarPageBuilder {
 		return result;		
 	}
 
-	get timestamp() {
+	get timestamp(): Timestamp {
 		return this.earliestRequest.timestamp;
 	}
 
-	protected get startedDateTime() {
+	protected get startedDateTime(): ISODateTimeString {
 		return this.earliestRequest.startedDateTime;
 	}
 
-	protected get pageTimings(): NpmHarFormatTypes.PageTiming {
+	get pageTimings(): HarPageTimings {
 		const onContentLoad = this.domContentEventFiredEvent == null ? -1 :
 			roundToThreeDecimalPlaces(
 				(this.domContentEventFiredEvent.timestamp - this.timestamp) * 1000
@@ -69,7 +70,7 @@ export class HarPageBuilder {
 		};
 	}
 
-	get page() {
+	get page(): HarPage {
 		const {id, title, startedDateTime, pageTimings} = this;
 		if (id == null) {
 			throw new Error("Cannot construct new Har format page unless the builder's id field has been set.")

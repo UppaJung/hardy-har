@@ -1,7 +1,8 @@
 import type { DebuggerEvent } from "./DebuggerEvent.ts";
 import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPageBuilder } from "./HarPageBuilder.ts";
-import type { Options } from "./index.ts";
+import type { HarPage } from "./index.ts";
+import type { Options } from "./Options.ts";
 import { type FrameId, isHarPageEventName } from "./types.ts";
 import { calculateOnlyOnce } from "./util.ts";
 
@@ -9,10 +10,10 @@ import { calculateOnlyOnce } from "./util.ts";
 export class HarPagesBuilder {
 	constructor(protected readonly harEntriesBuilder: HarEntriesBuilder, protected readonly options: Options) {}
 
-	byFrameId = new Map<FrameId, HarPageBuilder>();
-	pageStackWithTopAtIndex0 = [] as HarPageBuilder[];
+	byFrameId: Map<FrameId, HarPageBuilder> = new Map();
+	pageStackWithTopAtIndex0: HarPageBuilder[] = [];
 
-	getOrCreateByFrameId = (frameId: FrameId) => {
+	getOrCreateByFrameId = (frameId: FrameId): HarPageBuilder => {
 		let page = this.byFrameId.get(frameId);
 		if (page == null) {
 			page = new HarPageBuilder(this.harEntriesBuilder, this.pageStackWithTopAtIndex0.length + 1, [frameId]);
@@ -22,7 +23,7 @@ export class HarPagesBuilder {
 		return page;
 	}
 
-	createForEntriesWithNoPage = (frameIds: FrameId[]) => {
+	createForEntriesWithNoPage = (frameIds: FrameId[]): HarPageBuilder => {
 		const page = new HarPageBuilder(this.harEntriesBuilder, 0, frameIds);
 		for (const frameId of frameIds) {
 			this.byFrameId.set(frameId, page);
@@ -31,9 +32,9 @@ export class HarPagesBuilder {
 		return page;
 	}
 
-	get topOfPageStack() { return this.pageStackWithTopAtIndex0[0]; }
+	get topOfPageStack(): HarPageBuilder { return this.pageStackWithTopAtIndex0[0]; }
 
-	protected validPageBuilders = calculateOnlyOnce( () =>
+	protected validPageBuilders: () => HarPageBuilder[] = calculateOnlyOnce( () =>
 		this.pageStackWithTopAtIndex0
 			.filter( page => page.isValid )
 			.toSorted( this.options.mimicChromeHar ?
@@ -42,7 +43,7 @@ export class HarPagesBuilder {
 			)
 	);
 
-	assignEntriesToPages = () => {
+	assignEntriesToPages = (): void => {
 		const entryBuildersSortedWithPage = this.harEntriesBuilder.getCompletedHarEntryBuilders()
 			.map( entryBuilder => ({entryBuilder, pageBuilder: entryBuilder.frameId == null ? undefined : this.byFrameId.get(entryBuilder.frameId)}) );
 		const entryBuildersWithPagesIdentifiedByTheirFrames =
@@ -61,7 +62,7 @@ export class HarPagesBuilder {
 		}
 	}
 
-	assignPageIds = () => {
+	assignPageIds = (): void => {
 		this.validPageBuilders()
 			.forEach( (page, index) => {
 			// Assign the next sequential page number.
@@ -69,12 +70,12 @@ export class HarPagesBuilder {
 		});
 	}
 
-	get pages() { 
+	get pages(): HarPage[]  { 
 		return this.validPageBuilders()
 			.map( page => page.page );
 	}
 
-	onPageEvent = (eventName: string, untypedEvent: unknown) => {
+	onPageEvent = (eventName: string, untypedEvent: unknown): void => {
 		if (!isHarPageEventName(eventName)) return;
 		const [topPageOfStack] = this.pageStackWithTopAtIndex0;
 		switch (eventName) {

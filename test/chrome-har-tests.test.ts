@@ -1,16 +1,16 @@
+// spell-checker: disable
+
 import { describe, it as test } from "jsr:@std/testing/bdd";
 import { expect } from "jsr:@std/expect";
 
-import { type HarEntry, harFromChromeHarMessageParamsObjects, type Options } from "../lib/index.ts";
-import type { HarEntryGenerated } from "../lib/HarEntryBuilder.ts";
-import * as ch from 'npm:chrome-har@0.13.5';
-// spell-checker: disable
-import * as path from "jsr:@std/path";
-import type { HarHeader, NpmHarFormatTypes } from "../lib/types.ts";
 import { sortHarHeadersByName } from "../lib/headers.ts";
+import { harFromChromeHarMessageParamsObjects, type Options, type HarHeader, type NpmHarFormatTypes} from "../lib/index.ts";
+
+import * as ch from 'npm:chrome-har@0.13.5';
+import * as path from "jsr:@std/path";
+import type { HarEntry } from "../lib/types.ts";
 
 const TestLogPath = path.resolve(import.meta.dirname!, 'test-logs');
-
 
 const fixChromeHarHeaders = (headers: HarHeader[]): HarHeader[] => {
   // Convert names to lowercase and eliminate duplicates
@@ -27,7 +27,7 @@ const fixChromeHarHeaders = (headers: HarHeader[]): HarHeader[] => {
 /**
  * Validate that, for each tcp connection, the previous request is fully completed before then next starts.
  */
-function validateRequestsOnSameConnectionDoNotOverlap(entries: HarEntryGenerated[]) {
+function validateRequestsOnSameConnectionDoNotOverlap(entries: HarEntry[]) {
   const entriesByConnection = entries
     .filter(
       entry => !['h3', 'h2', 'spdy/3.1'].includes(entry.response.httpVersion)
@@ -39,7 +39,7 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: HarEntryGenerated
       e.push(entry);
       entries.set(entry.connection, e);
       return entries;
-    }, new Map<string, HarEntryGenerated[]>());
+    }, new Map<string, HarEntry[]>());
   entriesByConnection.forEach((entries, connection) => {
     let previousEntry = entries.shift();
     for (const entry of entries) {

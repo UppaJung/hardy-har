@@ -2,12 +2,25 @@ import type { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
 import { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPagesBuilder } from "./HarPagesBuilder.ts";
 import { defaultOptions, type Options, type PopulatedOptions } from "./Options.ts";
-import type { ChromeHarMethodParamsObject, HarEventNameAndObject, HarEventNameAndObjectTuple, HarArchive, HarEventOrMetaEventName } from "./types.ts";
+import type { ChromeHarMethodParamsObject, HarEntry, HarEventNameAndObject, HarEventNameAndObjectTuple, HarEventOrMetaEventName, HarPage } from "./types.ts";
 
-
-// FIXME -- move centrally
 const PackageName = "hardy-har";
-const PackageVersion = "0.0.1";
+const PackageVersion = "0.1.0";
+
+export interface HttpArchiveLog {
+	readonly version: "1.2";
+	readonly creator: {
+		readonly name: string;
+			readonly version: `${number}.${number}.${number}`;
+	};
+	readonly pages: HarPage[];
+	readonly entries: HarEntry[];
+	readonly comment: string;
+}
+
+export interface HttpArchive {
+	log: HttpArchiveLog;
+}
 
 export class HarBuilder {
 	readonly options: PopulatedOptions;
@@ -20,7 +33,7 @@ export class HarBuilder {
 		this.pagesBuilder = new HarPagesBuilder(this.entriesBuilder, this.options);
 	}
 	
-	getHarArchive = () => {
+	getHarArchive = (): HttpArchive => {
 		this.pagesBuilder.assignEntriesToPages();
 		this.pagesBuilder.assignPageIds();
 		const {pages} = this.pagesBuilder;
@@ -37,10 +50,10 @@ export class HarBuilder {
 				entries,
 				comment: this.entriesBuilder.timelord.commentOnSkew
 			}
-		} as const satisfies HarArchive
+		} as const satisfies HttpArchive;
 	}
 
-	onDebuggerEvent = (eventName: string, untypedEvent: unknown) => {
+	onDebuggerEvent = (eventName: string, untypedEvent: unknown): void => {
 		if (untypedEvent == null || typeof untypedEvent !== 'object' || typeof eventName !== "string") return;
 		if (eventName.startsWith('Network.')) {
 			this.entriesBuilder.onNetworkEvent(eventName, untypedEvent);
@@ -49,34 +62,34 @@ export class HarBuilder {
 		}
 	}
 
-	onTypedDebuggerEvent = (<NAME extends HarEventOrMetaEventName>(eventName: NAME, event: DebuggerEventOrMetaEvent<NAME>) => {
+	onTypedDebuggerEvent = <NAME extends HarEventOrMetaEventName>(eventName: NAME, event: DebuggerEventOrMetaEvent<NAME>): void => {
 		this.onDebuggerEvent(eventName, event);
-	}) satisfies (...args: HarEventNameAndObjectTuple) => void;
+	}
 
-	fromUntypedDebuggerEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<[string, unknown]>) => {
+	fromUntypedDebuggerEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<[string, unknown]>): HttpArchive => {
 		for (const [eventName, untypedEvent] of eventNameAndObjectTuples) {
 			this.onDebuggerEvent(eventName, untypedEvent);
 		}
 		return this.getHarArchive();
 	}
 
-	fromEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<HarEventNameAndObjectTuple>) =>
+	fromEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<HarEventNameAndObjectTuple>): HttpArchive =>
 		this.fromUntypedDebuggerEventNameAndObjectTuples(eventNameAndObjectTuples);
 
-	static fromUntypedEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<[string, unknown]>, options: Options) => {
+	static fromUntypedEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<[string, unknown]>, options: Options): HttpArchive => {
 		return new HarBuilder(options).fromUntypedDebuggerEventNameAndObjectTuples(eventNameAndObjectTuples);
 	}
 
-	static fromEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<HarEventNameAndObjectTuple>, options?: Options) =>
+	static fromEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<HarEventNameAndObjectTuple>, options?: Options): HttpArchive =>
 			new HarBuilder(options).fromEventNameAndObjectTuples(eventNameAndObjectTuples);
 
-	static fromUntypedNamedDebuggerEvents = (namedDebuggerEvents: Iterable<{eventName: string, event: unknown}>, options?: Options) =>
+	static fromUntypedNamedDebuggerEvents = (namedDebuggerEvents: Iterable<{eventName: string, event: unknown}>, options?: Options): HttpArchive =>
 			new HarBuilder(options).fromUntypedDebuggerEventNameAndObjectTuples([...namedDebuggerEvents].map( ({eventName, event}) => [eventName, event] ));
 
-	static fromNamedDebuggerEvents = (namedDebuggerEvents: Iterable<HarEventNameAndObject>, options?: Options) =>
+	static fromNamedDebuggerEvents = (namedDebuggerEvents: Iterable<HarEventNameAndObject>, options?: Options): HttpArchive =>
 			new HarBuilder(options).fromUntypedDebuggerEventNameAndObjectTuples([...namedDebuggerEvents].map( ({eventName, event}) => [eventName, event] ));
 
-	static fromChromeHarMessageParamsObjects = (methodParamsObjects: ChromeHarMethodParamsObject[], options?: Options) =>
+	static fromChromeHarMessageParamsObjects = (methodParamsObjects: ChromeHarMethodParamsObject[], options?: Options): HttpArchive =>
 		new HarBuilder(options).fromUntypedDebuggerEventNameAndObjectTuples([...methodParamsObjects].map( ({method, params}) => [method, params] ));
 }
 

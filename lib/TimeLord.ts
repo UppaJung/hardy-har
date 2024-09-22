@@ -21,7 +21,7 @@ export class TimeLord {
   #largestWallTimeMinusTimestamp = Number.MIN_VALUE;
   #smallestWallTimeMinusTimestamp = Number.MAX_VALUE;
 	
-  addTimestampWallTimePair = (({ timestamp, wallTime }: { timestamp: number; wallTime: number; }) => {
+  addTimestampWallTimePair = (({ timestamp, wallTime }: { timestamp: number; wallTime: number; }): void => {
     const wallTimeMinusTimestamp = wallTime - timestamp;
     if (timestamp < this.#earliestTimestamp) {
       this.#earliestTimestamp = timestamp;
@@ -35,11 +35,11 @@ export class TimeLord {
     }
   });
 
-  getApproximateWallTimeInSecondsFromUnixEpochFromMonotonicallyIncreasingTimestamp = (timestamp: number) => {
+  getApproximateWallTimeInSecondsFromUnixEpochFromMonotonicallyIncreasingTimestamp = (timestamp: number): number => {
     return this.#earliestWallTimeMinusTimestamp + timestamp;
   };
 
-  get commentOnSkew() {
+  get commentOnSkew(): string {
     const msSkew = (this.#largestWallTimeMinusTimestamp - this.#smallestWallTimeMinusTimestamp) * 1000;
     return `Ensuring monotonically increasing time may have skewed reported times by as many as ${msSkew * 1000}ms.`;
   }
