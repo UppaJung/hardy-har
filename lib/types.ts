@@ -139,6 +139,7 @@ export const isHarNetworkEventName = (eventName: string): eventName is HarNetwor
 	HarNetworkEventSet.has(eventName as HarNetworkEventName);
 
 export const GetResponseBodyResponseEventName =	"Network.getResponseBodyResponse" as const;
+export type GetResponseBodyResponseEventName = typeof GetResponseBodyResponseEventName;
 const HarNetworkMetaEventNames = [
 	GetResponseBodyResponseEventName,
 ] as const satisfies DebuggerNetworkMetaEventName[];
@@ -150,13 +151,20 @@ export const isHarNetworkMetaEventName = (eventName: string): eventName is HarNe
 export type HarNetworkOrPageEventName = HarNetworkEventName | HarPageEventName | HarNetworkMetaEventName;
 export type HarEventName = HarNetworkOrPageEventName;
 export type HarEventOrMetaEventName = HarNetworkOrPageEventName | HarNetworkMetaEventName;
+export type HarEvent<T extends HarEventOrMetaEventName> = DebuggerEventOrMetaEvent<T>;
+
+export type HarEventNameAndObjectTuple<NAME extends HarEventOrMetaEventName = HarEventOrMetaEventName> = [NAME, HarEvent<NAME>];
+export type HarEventNameAndObject<NAME extends HarEventOrMetaEventName = HarEventOrMetaEventName> = {eventName: NAME, event: HarEvent<NAME>};
+export type ChromeHarMethodParamsObject = {method: string, params: unknown}
+
+export type DevToolsProtocolGetResponseBodyRequest = DevToolsProtocol.Network.GetResponseBodyRequest;
+export type DevToolsProtocolGetResponseBodyResponse = DevToolsProtocol.Network.GetResponseBodyResponse
 
 export const isHarNetworkOrPageEventName = (eventName: string): eventName is HarNetworkOrPageEventName =>
 	isHarNetworkEventName(eventName) || isHarPageEventName(eventName) || isHarNetworkMetaEventName(eventName);
 
+export const isHarEventName = (eventName: string): eventName is HarEventName =>
+	isHarNetworkEventName(eventName) || isHarPageEventName(eventName);
+
 export const isHarNetworkEventOrMetaEventName = (eventName: string): eventName is HarNetworkEventName | HarNetworkMetaEventName =>
 	isHarNetworkEventName(eventName) || isHarNetworkMetaEventName(eventName);
-
-export type EventNameAndObjectTuple<NAME extends HarEventOrMetaEventName = HarEventOrMetaEventName> = [NAME, DebuggerEventOrMetaEvent<NAME>];
-export type EventNameAndObject<NAME extends HarEventOrMetaEventName = HarEventOrMetaEventName> = {eventName: NAME, event: DebuggerEventOrMetaEvent<NAME>};
-export type ChromeHarMethodParamsObject = {method: string, params: unknown}

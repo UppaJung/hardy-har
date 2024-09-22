@@ -2,7 +2,7 @@ import { HarBuilder } from "./HarBuilder.ts";
 
 export { HarBuilder } from "./HarBuilder.ts";
 export type {Options} from "./Options.ts";
-export type * from "./types.ts";
+export * from "./types.ts";
 export {
 	isHarNetworkEventName, isHarPageEventName, isHarNetworkOrPageEventName, isHarNetworkEventOrMetaEventName,
 	GetResponseBodyResponseEventName,
@@ -12,4 +12,4 @@ export const harFromUntypedEventNameAndObjectTuples = HarBuilder.fromUntypedEven
 export const harFromEventNameAndObjectTuples = HarBuilder.fromEventNameAndObjectTuples;
 export const harFromUntypedNamedDebuggerEvents = HarBuilder.fromUntypedNamedDebuggerEvents;
 export const harFromNamedDebuggerEvents = HarBuilder.fromNamedDebuggerEvents;
-export const harFromChromeHarMessageParams = HarBuilder.fromChromeHarMessageParams;
+export const fromChromeHarMessageParamsObjects = HarBuilder.fromChromeHarMessageParamsObjects;

@@ -174,8 +174,9 @@ export class HarEntryBuilder {
 	 * The only reliable source seems to be the content encoding.
 	 */
 	protected get responseBodySize() {
-		if (this.options.mimicChromeHar) {
-			return -1;
+		// If we have a response body, we can be certain of its size.
+		if (this.responseBody != null) {
+			return this.responseBody.length;
 		}
 
 		// Per [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#name-content-semantics)
@@ -186,6 +187,8 @@ export class HarEntryBuilder {
 			return 0;
 		}
 
+		// The 'body' and 'content' appear to be synonymous since compression happens at lower levels of the HTTP protocol,
+		// so we the response included a content-length header, we can use that as a signal of the body size.
 		// https://www.rfc-editor.org/rfc/rfc9110#name-content-length
 		const contentLengthValue = this.getResponseHeader('Content-Length')?.value;
 		const contentLengthParsed = contentLengthValue == null ? undefined : parseInt(contentLengthValue, 10);
@@ -194,7 +197,7 @@ export class HarEntryBuilder {
 			return contentLength;
 		}
 		
-		// When we've failed to determine the body size, the HAR spec requires us to return -1.
+		// When we can't determine the body size, the HAR spec requires us to indicate this with a value of -1.
 		return -1;
 	}
 

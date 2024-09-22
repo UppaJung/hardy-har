@@ -98,9 +98,8 @@ describe('Mimimcs chrome-har', () => {
         // We'll also use this opportunity to sort them by name for reliable comparison with hardy-har.
         e.request.headers = fixChromeHarHeaders(e.request.headers);
         e.response.headers = fixChromeHarHeaders(e.response.headers);
-        e.response.bodySize = -1;
         Object.assign(e.request, {cookies: [], headers: [], headersSize: 0});
-        Object.assign(e.response, {cookies: [], headers: [], headersSize: 0});
+        Object.assign(e.response, {cookies: [], headers: [], headersSize: 0, bodySize: -1});
         Object.assign(e, {pageref: undefined});
         delete e.response.content.compression;
         // Fix NaN values in initiator line, also fixing the incorrect typing of _initiator_line in the HAR types from npm.
@@ -114,7 +113,7 @@ describe('Mimimcs chrome-har', () => {
 
       hardyHar.log.entries.forEach( e => {
         Object.assign(e.request, {cookies: [], headers: [], headersSize: 0});
-        Object.assign(e.response, {cookies: [], headers: [], headersSize: 0});
+        Object.assign(e.response, {cookies: [], headers: [], headersSize: 0, bodySize: -1});
         Object.assign(e, {pageref: undefined});
         if ("_initiator_line" in e && e._initiator_line === 1) {
           delete (e as unknown as {_initiator_line?: number})._initiator_line;
