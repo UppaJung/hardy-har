@@ -1,5 +1,5 @@
 import type {DevToolsProtocol} from './DebuggerEvent.ts';
-import type * as NpmHarFormatTypes from 'npm:@types/har-format';
+import type * as NpmHarFormatTypes from 'npm:@types/har-format@1.2.15';
 import type { DebuggerEventOrMetaEvent, DebuggerNetworkHttpEventName, DebuggerNetworkMetaEventName, DebuggerPageEventName } from "./DebuggerEvent.ts";
 
 export type {DevToolsProtocol, NpmHarFormatTypes};
