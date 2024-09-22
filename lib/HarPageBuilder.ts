@@ -13,8 +13,8 @@ export class HarPageBuilder {
 
 	frameIds: Set<FrameId>;
 
-	constructor(public readonly rootFrameId: FrameId, protected readonly harEntriesBuilder: HarEntriesBuilder) {
-		this.frameIds = new Set<FrameId>([rootFrameId]);
+	constructor(protected readonly harEntriesBuilder: HarEntriesBuilder, readonly orderCreated: number, frameIds: FrameId[] = []) {
+		this.frameIds = new Set<FrameId>(frameIds);
 	}
 
 	addFrameId = (frameId: FrameId) => {
@@ -45,16 +45,12 @@ export class HarPageBuilder {
 		return result;		
 	}
 
-	protected get earliestRequestWillBeSentEvent() {
-		return this.earliestRequest.requestWillBeSentEvent;
-	}
-
 	get wallTime() {
-		return this.earliestRequestWillBeSentEvent.wallTime;
+		return this.earliestRequest.wallTime;
 	}
 
 	get timestamp() {
-		return this.earliestRequestWillBeSentEvent.timestamp
+		return this.earliestRequest.response.timing?.requestTime ?? this.earliestRequest.timestamp;
 	}
 
 	get wallTimeOfTimeStamp0() {

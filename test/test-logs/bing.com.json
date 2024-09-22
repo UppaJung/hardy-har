@@ -67,25 +67,6 @@
     }
   },
   {
-    "method": "Network.responseReceivedExtraInfo",
-    "params": {
-      "requestId": "DC2DB00F1A4F0A391C48E404FF168637",
-      "blockedCookies": [],
-      "headers": {
-        "accept-ch": "Sec-CH-UA-Arch, Sec-CH-UA-Bitness, Sec-CH-UA-Full-Version, Sec-CH-UA-Full-Version-List, Sec-CH-UA-Mobile, Sec-CH-UA-Model, Sec-CH-UA-Platform, Sec-CH-UA-Platform-Version",
-        "content-length": "0",
-        "date": "Thu, 11 Jul 2024 04:00:51 GMT",
-        "location": "https://cn.bing.com/",
-        "x-msedge-ref": "Ref A: 1609281457634F55ABA9F86E69014FCD Ref B: SIN30EDGE0713 Ref C: 2024-07-11T04:00:51Z"
-      },
-      "resourceIPAddressSpace": "Public",
-      "statusCode": 301,
-      "cookiePartitionKey": "https://bing.com",
-      "cookiePartitionKeyOpaque": false,
-      "exemptedCookies": []
-    }
-  },
-  {
     "method": "Network.requestWillBeSent",
     "params": {
       "requestId": "DC2DB00F1A4F0A391C48E404FF168637",
@@ -464,246 +445,154 @@
       "hasExtraInfo": true,
       "frameId": "D6679A9F699EE881BE059AEE008B5F07"
     }
-  },
-  {
-    "method": "Network.requestWillBeSentExtraInfo",
+  }, {
+    "method": "Page.frameNavigated",
     "params": {
-      "requestId": "98243.3",
-      "associatedCookies": [
-        {
-          "cookie": {
-            "name": "MUID",
-            "value": "27EF5FA852976BB80EDC4B1153CD6A16",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": 1754366452.244094,
-            "size": 36,
-            "httpOnly": false,
-            "secure": true,
-            "session": false,
-            "sameSite": "None",
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
+      "frame": {
+        "id": "D6679A9F699EE881BE059AEE008B5F07",
+        "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
+        "url": "https://cn.bing.com/",
+        "domainAndRegistry": "bing.com",
+        "securityOrigin": "https://cn.bing.com",
+        "mimeType": "text/html",
+        "adFrameStatus": {
+          "adFrameType": "none"
         },
-        {
-          "cookie": {
-            "name": "MUIDB",
-            "value": "27EF5FA852976BB80EDC4B1153CD6A16",
-            "domain": "cn.bing.com",
-            "path": "/",
-            "expires": 1754366452.245748,
-            "size": 37,
-            "httpOnly": true,
-            "secure": false,
-            "session": false,
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "_EDGE_S",
-            "value": "F=1&SID=33B9E8440A736F860399FCFD0B296E85",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": -1,
-            "size": 47,
-            "httpOnly": true,
-            "secure": false,
-            "session": true,
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "_EDGE_V",
-            "value": "1",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": 1754366452.245782,
-            "size": 8,
-            "httpOnly": true,
-            "secure": false,
-            "session": false,
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "SRCHD",
-            "value": "AF=NOFORM",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": 1755230452.245796,
-            "size": 14,
-            "httpOnly": false,
-            "secure": true,
-            "session": false,
-            "sameSite": "None",
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "SRCHUID",
-            "value": "V=2&GUID=DABD9AEFD0EF404A97FAEEAF01A37C24&dmnchg=1",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": 1755230452.245813,
-            "size": 57,
-            "httpOnly": false,
-            "secure": true,
-            "session": false,
-            "sameSite": "None",
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "SRCHUSR",
-            "value": "DOB=20240711",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": 1755230452.245827,
-            "size": 19,
-            "httpOnly": false,
-            "secure": true,
-            "session": false,
-            "sameSite": "None",
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "SRCHHPGUSR",
-            "value": "SRCHLANG=zh-Hans",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": 1755230452.245838,
-            "size": 26,
-            "httpOnly": false,
-            "secure": true,
-            "session": false,
-            "sameSite": "None",
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "_SS",
-            "value": "SID=33B9E8440A736F860399FCFD0B296E85",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": -1,
-            "size": 39,
-            "httpOnly": false,
-            "secure": true,
-            "session": true,
-            "sameSite": "None",
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        },
-        {
-          "cookie": {
-            "name": "_HPVN",
-            "value": "CS=eyJQbiI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiUCJ9LCJTYyI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiSCJ9LCJReiI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiVCJ9LCJBcCI6dHJ1ZSwiTXV0ZSI6dHJ1ZSwiTGFkIjoiMjAyNC0wNy0xMVQwMDowMDowMFoiLCJJb3RkIjowLCJHd2IiOjAsIlRucyI6MCwiRGZ0IjpudWxsLCJNdnMiOjAsIkZsdCI6MCwiSW1wIjoxLCJUb2JuIjowfQ==",
-            "domain": ".bing.com",
-            "path": "/",
-            "expires": 1755230452.245869,
-            "size": 328,
-            "httpOnly": false,
-            "secure": true,
-            "session": false,
-            "sameSite": "None",
-            "priority": "Medium",
-            "sameParty": false,
-            "sourceScheme": "Secure",
-            "sourcePort": 443
-          },
-          "blockedReasons": [],
-          "exemptionReason": "None"
-        }
-      ],
-      "headers": {
-        ":authority": "cn.bing.com",
-        ":method": "GET",
-        ":path": "/rp/lmu8EBCaPRMKtay8LSArGyY3mv4.br.js",
-        ":scheme": "https",
-        "accept": "*/*",
-        "accept-encoding": "gzip, deflate, br, zstd",
-        "cookie": "MUID=27EF5FA852976BB80EDC4B1153CD6A16; MUIDB=27EF5FA852976BB80EDC4B1153CD6A16; _EDGE_S=F=1&SID=33B9E8440A736F860399FCFD0B296E85; _EDGE_V=1; SRCHD=AF=NOFORM; SRCHUID=V=2&GUID=DABD9AEFD0EF404A97FAEEAF01A37C24&dmnchg=1; SRCHUSR=DOB=20240711; SRCHHPGUSR=SRCHLANG=zh-Hans; _SS=SID=33B9E8440A736F860399FCFD0B296E85; _HPVN=CS=eyJQbiI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiUCJ9LCJTYyI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiSCJ9LCJReiI6eyJDbiI6MSwiU3QiOjAsIlFzIjowLCJQcm9kIjoiVCJ9LCJBcCI6dHJ1ZSwiTXV0ZSI6dHJ1ZSwiTGFkIjoiMjAyNC0wNy0xMVQwMDowMDowMFoiLCJJb3RkIjowLCJHd2IiOjAsIlRucyI6MCwiRGZ0IjpudWxsLCJNdnMiOjAsIkZsdCI6MCwiSW1wIjoxLCJUb2JuIjowfQ==",
-        "priority": "u=1",
-        "referer": "https://cn.bing.com/",
-        "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"HeadlessChrome\";v=\"126\"",
-        "sec-ch-ua-arch": "\"arm\"",
-        "sec-ch-ua-bitness": "\"64\"",
-        "sec-ch-ua-full-version": "\"126.0.6478.126\"",
-        "sec-ch-ua-full-version-list": "\"Not/A)Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"126.0.6478.126\", \"HeadlessChrome\";v=\"126.0.6478.126\"",
-        "sec-ch-ua-mobile": "?0",
-        "sec-ch-ua-model": "\"\"",
-        "sec-ch-ua-platform": "\"macOS\"",
-        "sec-ch-ua-platform-version": "\"14.2.1\"",
-        "sec-fetch-dest": "script",
-        "sec-fetch-mode": "no-cors",
-        "sec-fetch-site": "same-origin",
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.6478.126 Safari/537.36"
+        "secureContextType": "Secure",
+        "crossOriginIsolatedContextType": "NotIsolated",
+        "gatedAPIFeatures": []
       },
-      "connectTiming": {
-        "requestTime": 1890150.844619
-      },
-      "clientSecurityState": {
-        "initiatorIsSecureContext": true,
-        "initiatorIPAddressSpace": "Public",
-        "privateNetworkRequestPolicy": "PreflightWarn"
-      },
-      "siteHasCookieInOtherPartition": false
+      "type": "Navigation"
     }
   },
   {
+    "method": "Network.dataReceived",
+    "params": {
+      "requestId": "DC2DB00F1A4F0A391C48E404FF168637",
+      "timestamp": 1890150.839217,
+      "dataLength": 67266,
+      "encodedDataLength": 0
+    }
+  },
+  {
+    "method": "Network.requestWillBeSent",
+    "params": {
+      "requestId": "98243.2",
+      "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
+      "documentURL": "https://cn.bing.com/",
+      "request": {
+        "url": "https://s.cn.bing.net/th?id=OHR.GangiSicily_ZH-CN9086944081_1920x1080.webp&qlt=50",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"HeadlessChrome\";v=\"126\"",
+          "Referer": "https://cn.bing.com/",
+          "sec-ch-ua-mobile": "?0",
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.6478.126 Safari/537.36",
+          "sec-ch-ua-platform": "\"macOS\""
+        },
+        "mixedContentType": "none",
+        "initialPriority": "Low",
+        "referrerPolicy": "strict-origin-when-cross-origin",
+        "isLinkPreload": true,
+        "isSameSite": false
+      },
+      "timestamp": 1890150.840978,
+      "wallTime": 1720670452.260172,
+      "initiator": {
+        "type": "parser",
+        "url": "https://cn.bing.com/",
+        "lineNumber": 0,
+        "columnNumber": 1129
+      },
+      "redirectHasExtraInfo": false,
+      "type": "Image",
+      "frameId": "D6679A9F699EE881BE059AEE008B5F07",
+      "hasUserGesture": false
+    }
+  },
+  {
+    "method": "Network.requestWillBeSent",
+    "params": {
+      "requestId": "98243.3",
+      "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
+      "documentURL": "https://cn.bing.com/",
+      "request": {
+        "url": "https://cn.bing.com/rp/lmu8EBCaPRMKtay8LSArGyY3mv4.br.js",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"HeadlessChrome\";v=\"126\"",
+          "sec-ch-ua-mobile": "?0",
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.6478.126 Safari/537.36",
+          "sec-ch-ua-arch": "\"arm\"",
+          "sec-ch-ua-full-version": "\"126.0.6478.126\"",
+          "sec-ch-ua-platform-version": "\"14.2.1\"",
+          "Referer": "https://cn.bing.com/",
+          "sec-ch-ua-full-version-list": "\"Not/A)Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"126.0.6478.126\", \"HeadlessChrome\";v=\"126.0.6478.126\"",
+          "sec-ch-ua-bitness": "\"64\"",
+          "sec-ch-ua-model": "\"\"",
+          "sec-ch-ua-platform": "\"macOS\""
+        },
+        "mixedContentType": "none",
+        "initialPriority": "High",
+        "referrerPolicy": "strict-origin-when-cross-origin",
+        "isLinkPreload": true,
+        "isSameSite": true
+      },
+      "timestamp": 1890150.84336,
+      "wallTime": 1720670452.263373,
+      "initiator": {
+        "type": "parser",
+        "url": "https://cn.bing.com/",
+        "lineNumber": 0,
+        "columnNumber": 1209
+      },
+      "redirectHasExtraInfo": false,
+      "type": "Script",
+      "frameId": "D6679A9F699EE881BE059AEE008B5F07",
+      "hasUserGesture": false
+    }
+  },
+  {
+    "method": "Network.requestWillBeSent",
+    "params": {
+      "requestId": "98243.5",
+      "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
+      "documentURL": "https://cn.bing.com/",
+      "request": {
+        "url": "https://cn.bing.com/rp/zVzKRvQDTWNO9cqRL85PKngXNBM.br.css",
+        "method": "GET",
+        "headers": {
+          "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"HeadlessChrome\";v=\"126\"",
+          "sec-ch-ua-mobile": "?0",
+          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.6478.126 Safari/537.36",
+          "sec-ch-ua-arch": "\"arm\"",
+          "sec-ch-ua-full-version": "\"126.0.6478.126\"",
+          "sec-ch-ua-platform-version": "\"14.2.1\"",
+          "Referer": "https://cn.bing.com/",
+          "sec-ch-ua-full-version-list": "\"Not/A)Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"126.0.6478.126\", \"HeadlessChrome\";v=\"126.0.6478.126\"",
+          "sec-ch-ua-bitness": "\"64\"",
+          "sec-ch-ua-model": "\"\"",
+          "sec-ch-ua-platform": "\"macOS\""
+        },
+        "mixedContentType": "none",
+        "initialPriority": "VeryHigh",
+        "referrerPolicy": "strict-origin-when-cross-origin",
+        "isSameSite": true
+      },
+      "timestamp": 1890150.844491,
+      "wallTime": 1720670452.263836,
+      "initiator": {
+        "type": "parser",
+        "url": "https://cn.bing.com/",
+        "lineNumber": 0,
+        "columnNumber": 62745
+      },
+      "redirectHasExtraInfo": false,
+      "type": "Stylesheet",
+      "frameId": "D6679A9F699EE881BE059AEE008B5F07",
+      "hasUserGesture": false
+    }
+  }, {
     "method": "Network.requestWillBeSentExtraInfo",
     "params": {
       "requestId": "98243.5",
@@ -939,154 +828,6 @@
         "privateNetworkRequestPolicy": "PreflightWarn"
       },
       "siteHasCookieInOtherPartition": false
-    }
-  },
-  {
-    "method": "Page.frameNavigated",
-    "params": {
-      "frame": {
-        "id": "D6679A9F699EE881BE059AEE008B5F07",
-        "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
-        "url": "https://cn.bing.com/",
-        "domainAndRegistry": "bing.com",
-        "securityOrigin": "https://cn.bing.com",
-        "mimeType": "text/html",
-        "adFrameStatus": {
-          "adFrameType": "none"
-        },
-        "secureContextType": "Secure",
-        "crossOriginIsolatedContextType": "NotIsolated",
-        "gatedAPIFeatures": []
-      },
-      "type": "Navigation"
-    }
-  },
-  {
-    "method": "Network.dataReceived",
-    "params": {
-      "requestId": "DC2DB00F1A4F0A391C48E404FF168637",
-      "timestamp": 1890150.839217,
-      "dataLength": 67266,
-      "encodedDataLength": 0
-    }
-  },
-  {
-    "method": "Network.requestWillBeSent",
-    "params": {
-      "requestId": "98243.2",
-      "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
-      "documentURL": "https://cn.bing.com/",
-      "request": {
-        "url": "https://s.cn.bing.net/th?id=OHR.GangiSicily_ZH-CN9086944081_1920x1080.webp&qlt=50",
-        "method": "GET",
-        "headers": {
-          "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"HeadlessChrome\";v=\"126\"",
-          "Referer": "https://cn.bing.com/",
-          "sec-ch-ua-mobile": "?0",
-          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.6478.126 Safari/537.36",
-          "sec-ch-ua-platform": "\"macOS\""
-        },
-        "mixedContentType": "none",
-        "initialPriority": "Low",
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "isLinkPreload": true,
-        "isSameSite": false
-      },
-      "timestamp": 1890150.840978,
-      "wallTime": 1720670452.260172,
-      "initiator": {
-        "type": "parser",
-        "url": "https://cn.bing.com/",
-        "lineNumber": 0,
-        "columnNumber": 1129
-      },
-      "redirectHasExtraInfo": false,
-      "type": "Image",
-      "frameId": "D6679A9F699EE881BE059AEE008B5F07",
-      "hasUserGesture": false
-    }
-  },
-  {
-    "method": "Network.requestWillBeSent",
-    "params": {
-      "requestId": "98243.3",
-      "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
-      "documentURL": "https://cn.bing.com/",
-      "request": {
-        "url": "https://cn.bing.com/rp/lmu8EBCaPRMKtay8LSArGyY3mv4.br.js",
-        "method": "GET",
-        "headers": {
-          "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"HeadlessChrome\";v=\"126\"",
-          "sec-ch-ua-mobile": "?0",
-          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.6478.126 Safari/537.36",
-          "sec-ch-ua-arch": "\"arm\"",
-          "sec-ch-ua-full-version": "\"126.0.6478.126\"",
-          "sec-ch-ua-platform-version": "\"14.2.1\"",
-          "Referer": "https://cn.bing.com/",
-          "sec-ch-ua-full-version-list": "\"Not/A)Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"126.0.6478.126\", \"HeadlessChrome\";v=\"126.0.6478.126\"",
-          "sec-ch-ua-bitness": "\"64\"",
-          "sec-ch-ua-model": "\"\"",
-          "sec-ch-ua-platform": "\"macOS\""
-        },
-        "mixedContentType": "none",
-        "initialPriority": "High",
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "isLinkPreload": true,
-        "isSameSite": true
-      },
-      "timestamp": 1890150.84336,
-      "wallTime": 1720670452.263373,
-      "initiator": {
-        "type": "parser",
-        "url": "https://cn.bing.com/",
-        "lineNumber": 0,
-        "columnNumber": 1209
-      },
-      "redirectHasExtraInfo": false,
-      "type": "Script",
-      "frameId": "D6679A9F699EE881BE059AEE008B5F07",
-      "hasUserGesture": false
-    }
-  },
-  {
-    "method": "Network.requestWillBeSent",
-    "params": {
-      "requestId": "98243.5",
-      "loaderId": "DC2DB00F1A4F0A391C48E404FF168637",
-      "documentURL": "https://cn.bing.com/",
-      "request": {
-        "url": "https://cn.bing.com/rp/zVzKRvQDTWNO9cqRL85PKngXNBM.br.css",
-        "method": "GET",
-        "headers": {
-          "sec-ch-ua": "\"Not/A)Brand\";v=\"8\", \"Chromium\";v=\"126\", \"HeadlessChrome\";v=\"126\"",
-          "sec-ch-ua-mobile": "?0",
-          "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/126.0.6478.126 Safari/537.36",
-          "sec-ch-ua-arch": "\"arm\"",
-          "sec-ch-ua-full-version": "\"126.0.6478.126\"",
-          "sec-ch-ua-platform-version": "\"14.2.1\"",
-          "Referer": "https://cn.bing.com/",
-          "sec-ch-ua-full-version-list": "\"Not/A)Brand\";v=\"8.0.0.0\", \"Chromium\";v=\"126.0.6478.126\", \"HeadlessChrome\";v=\"126.0.6478.126\"",
-          "sec-ch-ua-bitness": "\"64\"",
-          "sec-ch-ua-model": "\"\"",
-          "sec-ch-ua-platform": "\"macOS\""
-        },
-        "mixedContentType": "none",
-        "initialPriority": "VeryHigh",
-        "referrerPolicy": "strict-origin-when-cross-origin",
-        "isSameSite": true
-      },
-      "timestamp": 1890150.844491,
-      "wallTime": 1720670452.263836,
-      "initiator": {
-        "type": "parser",
-        "url": "https://cn.bing.com/",
-        "lineNumber": 0,
-        "columnNumber": 62745
-      },
-      "redirectHasExtraInfo": false,
-      "type": "Stylesheet",
-      "frameId": "D6679A9F699EE881BE059AEE008B5F07",
-      "hasUserGesture": false
     }
   },
   {

@@ -17,13 +17,14 @@ export class HarBuilder {
 	constructor(options: Options = {}) {
 		this.options = {...defaultOptions, ...options};
 		this.entriesBuilder = new HarEntriesBuilder(this.options);
-		this.pagesBuilder = new HarPagesBuilder(this.entriesBuilder);
+		this.pagesBuilder = new HarPagesBuilder(this.entriesBuilder, this.options);
 	}
 	
 	getHarArchive = () => {
+		this.pagesBuilder.assignEntriesToPages();
 		this.pagesBuilder.assignPageIds();
 		const {pages} = this.pagesBuilder;
-		const {entries} = this.entriesBuilder;
+		const entries = this.entriesBuilder.getCompletedHarEntries();
 
 		return {
 			log: {

@@ -18,23 +18,25 @@ export class HarEntriesBuilder {
 
 	constructor(readonly options: PopulatedOptions) { }
 
-	#getCompletedHarEntries = calculateOnlyOnce( () => {
-		const validEntryBuilders = this.allEntryBuilders.filter(e => e.isValidForInclusionInHarArchive)
-		const sortedValidEntryBuilders = // this.options.mimicChromeHar ?
-			// validEntryBuilders :
-			validEntryBuilders.toSorted( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds );
+	getCompletedHarEntryBuilders = calculateOnlyOnce( () =>
+		this.allEntryBuilders.filter(e => e.isValidForInclusionInHarArchive) );
+
+	getCompletedHarEntryBuildersSortedByRequestTime = calculateOnlyOnce( () =>
+		this.getCompletedHarEntryBuilders()
+			.toSorted( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds )
+	);
+
+	getCompletedHarEntries = calculateOnlyOnce( () => {
+		const sortedValidEntryBuilders = this.getCompletedHarEntryBuildersSortedByRequestTime();
 		const harEntries = sortedValidEntryBuilders.map((entry) => entry.entry);
 		const nonNullHarEntries = harEntries.filter(entry => entry != null)
 		return nonNullHarEntries;
 	});
 
-	get entries() {
-		return this.#getCompletedHarEntries();
-	}
-
 	getHarEntriesBuildersForFrameIdsSortedByRequestSentTimeStamp = (...frameIds: FrameId[]) =>
 		([] as HarEntryBuilder[]).concat(
-			...frameIds.map(frameId => this.entryBuildersByFrameId.get(frameId) ?? []))
+			...frameIds.map(frameId => this.entryBuildersByFrameId.get(frameId) ?? [])
+		)
 		.filter( e => e.isValidForPageTimeCalculations)
 		.sort( this.options.mimicChromeHar ?
 			((a, b) => a.orderArrived - b.orderArrived ) :
@@ -73,7 +75,7 @@ export class HarEntriesBuilder {
 		switch (eventName) {
 			case "Network.requestWillBeSent": {
 				const {redirectResponse, ...event} = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const {requestId, frameId} = event;
+				const {requestId, frameId=""} = event;
 				let priorRedirects = 0;
 				const priorEntryForThisRequestId = this.entryBuildersByRequestId.get(requestId);
 				if (priorEntryForThisRequestId != null && priorEntryForThisRequestId._requestWillBeSentEvent != null) {
@@ -84,14 +86,12 @@ export class HarEntriesBuilder {
 				const entry = this.#getOrCreateForRequestId(requestId);
 				entry._requestWillBeSentEvent = event;
 				entry.priorRedirects = priorRedirects;
-				if (frameId != null) {
-					let entriesForFrameId = this.entryBuildersByFrameId.get(frameId);
-					if (entriesForFrameId == null) {
-						entriesForFrameId = [];
-						this.entryBuildersByFrameId.set(frameId, entriesForFrameId);
-					}
-					entriesForFrameId.push(entry);
+				let entriesForFrameId = this.entryBuildersByFrameId.get(frameId);
+				if (entriesForFrameId == null) {
+					entriesForFrameId = [];
+					this.entryBuildersByFrameId.set(frameId, entriesForFrameId);
 				}
+				entriesForFrameId.push(entry);
 				break;
 			}
 			case "Network.responseReceived": {

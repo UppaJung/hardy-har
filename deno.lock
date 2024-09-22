@@ -12,6 +12,7 @@
     "npm:@types/har-format@*": "1.2.15",
     "npm:@types/node@*": "22.5.4",
     "npm:chrome-har@*": "0.13.5",
+    "npm:chrome-har@0.13.5": "0.13.5",
     "npm:dayjs@*": "1.11.13",
     "npm:devtools-protocol@*": "0.0.1358005",
     "npm:tough-cookie@*": "5.0.0",

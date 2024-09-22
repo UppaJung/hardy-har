@@ -51,15 +51,35 @@ export const calculateResponseHeaderSize = ({
 		).join("")
 	}\r\n`.length;
 
+export const sortHarHeadersByName = (headers: HarHeader[]) =>
+	headers.toSorted((a, b) => a.name.localeCompare(b.name));
 
-export const parseHeaders = <T extends Record<string, string>>(headers?: T) =>
-	Object.entries(headers ?? {}).reduce(
+/**
+ * Turn headers of the from of a {[name: string]: string} object into an array of Har Header objects
+ * with all header names in lowercase.
+ * 
+ * @param headers Headers in the form returned by the Chrome DevTools Protocol, which are JavaScript
+ * objects with header names as keys and values as property values. Some CDP apis used mixed case for
+ * names and some use lowercase, so we'll make them all lowercase.
+ */
+export const headersRecordToArrayOfHarHeaders = <T extends Record<string, string>>(headers?: T) => {
+	// First, make all names lowercase (this will eliminate some redundant headers)
+	const headersRecordWithLowercaseKeys = Object.entries(headers ?? {}).reduce(
+		(r, [name, value]) => {
+			r[name.toLowerCase()] = value;
+			return r;
+		},
+		{} as Record<string, string>
+	);
+	// Convert to har headers
+	const harHeaders = Object.entries(headersRecordWithLowercaseKeys ?? {}).reduce(
 		(result, [name, value]) => {
 			result.push({ name, value });
 			return result;
 		}, [] as HarHeader[]
 	);
-	
+	return sortHarHeadersByName(harHeaders);
+}
 
 /**
  * Perform case-insensitive search for a header in a headers object.

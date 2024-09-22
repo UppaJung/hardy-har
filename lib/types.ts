@@ -100,7 +100,7 @@ export type HarEntry = Omit<NpmHarFormatTypes.Entry, `_${string}`> & {
 	_initiator_column?: number;
 	_initiator_function_name?: string;
 	_initiator_script_id?: string;
-	_chunks?: {ts: number, bytes: number}[];
+	_chunks?: NpmHarFormatTypes.Chunk[];
 	_was_pushed?: number;
 	_webSocketMessages?: WebSocketMessage[];
 };

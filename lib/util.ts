@@ -57,7 +57,7 @@ export function parsePostData(contentType: string | undefined, postData: string 
 				params: parseUrlEncoded(postData)
 			};
 		}
-		if (/^application\/json/.test(contentType)) {
+		if (/^application\/json/.test(contentType) && !options.mimicChromeHar) {
 			return {
 				mimeType: contentType,
 				params: toNameValuePairs(JSON.parse(postData))

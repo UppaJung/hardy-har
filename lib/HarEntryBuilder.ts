@@ -1,6 +1,6 @@
 import type {DevToolsProtocol, NpmHarFormatTypes} from "./types.ts";
 import { networkCookieToHarFormatCookie, parseCookie, parseRequestCookies, parseResponseCookies } from "./cookies.ts";
-import { calculateRequestHeaderSize, calculateResponseHeaderSize, getHeaderValue, parseHeaders } from "./headers.ts";
+import { calculateRequestHeaderSize, calculateResponseHeaderSize, getHeaderValue, headersRecordToArrayOfHarHeaders } from "./headers.ts";
 import {
 	parsePostData,
 	toNameValuePairs,
@@ -97,7 +97,7 @@ export class HarEntryBuilder {
 		return this.responseReceivedEvent?.response ?? this.redirectResponse;
 	}
 
-	protected get response() {
+	get response() {
 		if (this._response == null) {
 			throw new Error("Attempt to access a response even though there was no responseReceivedEvent or requestWillBeSent.redirectResponse event");
 		}
@@ -120,9 +120,17 @@ export class HarEntryBuilder {
 	}
 
 	protected get responseHeadersText() {
-		return this.responseReceivedExtraInfoEvent?.headersText ?? this.response.headersText;
+		// extraInfo.headersText provides "Raw response header text as it was received over the wire."
+		return this.responseReceivedExtraInfoEvent?.headersText ?? 
+			// deprecated, but here for backward compatibility
+			this.response.headersText;
 	}
 
+	/**
+	 * Note this from the spec
+	 * > *headersSize - The size of received response-headers is computed only from headers that are really received from the server.
+	 * > Additional headers appended by the browser are not included in this number, but they appear in the list of header objects.
+	 */
 	protected get responseHeadersSize() {
 		return (this.responseHeadersText != null) ? this.responseHeadersText.length :
 			(this.isHttp1x && !this.response.fromDiskCache && !this.response.fromEarlyHints) ?
@@ -135,7 +143,7 @@ export class HarEntryBuilder {
 	}
 
 	protected get responseHeaders() {
-		return parseHeaders(this.networkResponseHeadersObj);
+		return headersRecordToArrayOfHarHeaders(this.networkResponseHeadersObj);
 	}
 
 	getResponseHeader = (caseInsensitiveName: string) => {
@@ -143,27 +151,60 @@ export class HarEntryBuilder {
 		return this.responseHeaders.find( v => v.name.toLowerCase() == nameLc);
 	}
 
+	get responseEncodedDataLength() {
+		return this.loadingFinishedEvent?.encodedDataLength; // ?? this.response.encodedDataLength;
+	}
+
+
+
+	/**
+	 * Per spec
+	 * > bodySize [number] - Size of the received response body in bytes.
+	 * > Set to zero in case of responses coming from the cache (304).
+	 * > Set to -1 if the info is not available.
+	 * 
+	 * Implicitly, this means the size of the body AFTER it has been decompressed, and so
+	 * it's not possible to calculate by looking at the number of raw bytes over the network.
+	 *
+	 * There is no definitive source for the size of the response body, or even a definitive
+	 * expectation of what the size is in some circumstances (e.g., an interrupted request
+	 * that fetched some of the body but will return none of it).
+	 * 
+	 * The only reliable source seems to be the content encoding.
+	 */
 	protected get responseBodySize() {
-		if (!this.options.mimicChromeHar) {
-			// We differ from chrome-har in that we'll derive the body size as the value of the content-length
-			// header if it's available.
-			const contentLengthHeaderValue = this.getResponseHeader('content-length')?.value;
-			const contentLength = contentLengthHeaderValue == null ? undefined : parseInt(contentLengthHeaderValue);
-			if (contentLength != null && !isNaN(contentLength)) return contentLength;
+		if (this.options.mimicChromeHar) {
+			return -1;
 		}
-		// This behavior mirrors chrome-har.
-		const encodedDataLength = this.loadingFinishedEvent?.encodedDataLength ?? this.response.encodedDataLength;
-		const responseHeaderSize = Math.max(this.responseHeadersSize, 0);
-		if (!this.options.mimicChromeHar) {
-			// Mimicking a bug that allows chrome-har to have bodySize < -1
-			if (encodedDataLength == null || responseHeaderSize > encodedDataLength) return -1;
+
+		// Per [RFC 9110](https://www.rfc-editor.org/rfc/rfc9110#name-content-semantics)
+		// > All 1xx (Informational), 204 (No Content), and 304 (Not Modified) responses do not include content.
+		const {status} = this.response;
+		if ( (status >= 100 && status < 200) || status == 204 || status == 304) {
+			// We can be certain there's no content and body size is 0
+			return 0;
 		}
-		return encodedDataLength - responseHeaderSize;
+
+		// https://www.rfc-editor.org/rfc/rfc9110#name-content-length
+		const contentLengthValue = this.getResponseHeader('Content-Length')?.value;
+		const contentLengthParsed = contentLengthValue == null ? undefined : parseInt(contentLengthValue, 10);
+		const contentLength = contentLengthParsed == null || isNaN(contentLengthParsed) ? undefined : contentLengthParsed;
+		if (contentLength != null) {
+			return contentLength;
+		}
+		
+		// When we've failed to determine the body size, the HAR spec requires us to return -1.
+		return -1;
 	}
 
 	protected get responseCookeHeader() {
 		const {networkResponseHeadersObj: responseHeaders} = this;
 		if (responseHeaders == null) return undefined;
+		if (this.options.mimicChromeHar) {
+			// Chrome-har doesn't look for cookies in the `set-cookie` header in the responseReceivedExtraInfoEvent
+			// chrome-har-bug
+			return getHeaderValue(this.response.headers, 'Set-Cookie');
+		}
 		return getHeaderValue(responseHeaders, 'Set-Cookie');
 	}
 
@@ -198,14 +239,25 @@ export class HarEntryBuilder {
 	}
 
 	protected get requestHeaders(): DevToolsProtocol.Network.Headers {
-		return this.response.requestHeaders ?? {...this.request.headers, ...this.requestWillBeSentExtraInfoEvent?.headers};
+		if (this.options.mimicChromeHar) {
+			return this.response.requestHeaders ??
+			// Ordering matters below as chrome-har will do a linear search through headers and find the earliest ones first.
+			// That means we should place the earlier ones later in the below clause so they replace the later ones.
+			({...this.requestWillBeSentExtraInfoEvent?.headers, ...this.requestWillBeSentEvent.request.headers});
+		}
+		return { ...this.requestWillBeSentExtraInfoEvent?.headers, ...this.response.requestHeaders, ...this.request.headers};
 	}
 
 	protected get requestHarHeaders() {
-		return parseHeaders(this.requestHeaders);
+		return headersRecordToArrayOfHarHeaders(this.requestHeaders);
 	}
 
 	protected get requestCookieHeader() {
+		// if (this.options.mimicChromeHar) {
+		// 	// Chrome-har doesn't look for cookies in the `Cookie` header in the requestWillBeSentExtraInfoEvent
+		// 	return getHeaderValue(this.request.headers, 'Cookie') ?? 
+		// 		(this.response.requestHeaders != null ? getHeaderValue(this.response.requestHeaders, 'Cookie') : undefined);
+		// }
 		return getHeaderValue(this.requestHeaders, 'Cookie');
 	}
 
@@ -273,6 +325,11 @@ export class HarEntryBuilder {
 		return this.request.method;
 	}
 
+	/**
+	 * Per spec
+	 * > size [number] - Length of the returned content in bytes. Should be equal to response.bodySize if there is no compression and
+	 * bigger when the content has been compressed.
+	 */
 	get contentSize() {
 		if (this.dataReceivedEvents.length > 0) {
 			// calculate the content length by summing data received events
@@ -286,15 +343,12 @@ export class HarEntryBuilder {
 		return this.responseBody?.length ?? 0;
 	}
 
-
 	get compression_obj() {
-		const compression = this.responseBodySize < 0 ? undefined :
-		 	Math.max(0, this.contentSize - this.responseBodySize);
-		if (compression != null && compression > 0) {
-			return {compression}
-		} else {
+		if (this.options.mimicChromeHar || this.responseEncodedDataLength == null) {
 			return {};
 		}
+		const compression = this.contentSize - this.responseEncodedDataLength;
+		return compression > 0 ? {compression} : {};
 	}
 
 	protected get responseContent() {
@@ -303,14 +357,13 @@ export class HarEntryBuilder {
 		} = this;
 		const {
 			mimeType,
-			encodedDataLength: _transferSize,
 		} = this.response;
 
 		const responseBodyText = this.options.includeTextFromResponseBody ? this.responseBody : undefined;
 
 		const encoding = this.options.mimicChromeHar ?
 			(this.response as {encoding?: string}).encoding :
-			this.responseHeaders.find( h => h.name.toLowerCase() == 'content-encoding')?.value;
+			this.getResponseBodyResponse?.base64Encoded ? 'base64' : undefined;
 		const encodingObj = this.options.mimicChromeHar || encoding != null ? {encoding} : {}
 
 		return {
@@ -407,7 +460,7 @@ export class HarEntryBuilder {
 		// if (this.options.mimicChromeHar) {
 		// 	return  dayjs.unix(this.startedTimeInSeconds).toISOString();
 		// }
-   	return new Date(this.startedTimeInSeconds * 1000).toISOString();
+	 	return new Date(this.startedTimeInSeconds * 1000).toISOString();
 	}
 
 	protected get cache(): NpmHarFormatTypes.Cache {
@@ -544,7 +597,7 @@ export class HarEntryBuilder {
 			 0;
 		
 		const _queued = timing == null ? 0 : roundToThreeDecimalPlaces(1000 * (timing.requestTime - this.requestWillBeSentEvent.timestamp)) ?? 0;
-		const _queuedObj = _queued >= 0 ? {_queued} : {};
+		const _queuedObj = _queued > 0 ? {_queued} : {};
 
 		return {
 			blocked: blockedMs != null ? roundToThreeDecimalPlaces(blockedMs) : -1,
@@ -553,9 +606,9 @@ export class HarEntryBuilder {
 			send: getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(timing?.sendStart, timing?.sendEnd) ?? 0,
 			wait: getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(timing?.sendEnd, timing?.receiveHeadersEnd) ?? 0,
 			ssl: getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(timing?.sslStart, timing?.sslEnd) ?? -1,
-      receive: roundToThreeDecimalPlaces(receiveMs) ?? 0,
+			receive: roundToThreeDecimalPlaces(receiveMs) ?? 0,
 			..._queuedObj
-    };
+		};
 	}
 
 	protected get harRequest() {
@@ -575,6 +628,10 @@ export class HarEntryBuilder {
 
 	protected get harResponse() {
 		const { response } = this;
+		const _transferSize = this.options.mimicChromeHar ?
+			(this.loadingFinishedEvent?.encodedDataLength ?? this.response.encodedDataLength) :
+			(this.responseEncodedDataLength ?? -1);
+//			(this.responseEncodedDataLength ?? (this.isHttp1x ? this.response.encodedDataLength :  -1));
 		return {
 			headersSize: this.responseHeadersSize,
 			httpVersion: this.httpVersion ?? '',
@@ -585,7 +642,7 @@ export class HarEntryBuilder {
 			content: this.responseContent,
 			cookies: this.responseCookies ?? [],
 			headers: this.responseHeaders,
-			_transferSize: this.loadingFinishedEvent?.encodedDataLength ?? response.encodedDataLength,
+			_transferSize,
 			fromDiskCache: this.response.fromDiskCache ?? false,
 			fromEarlyHints: this.response.fromEarlyHints ?? false,
 			fromServiceWorker: this.response.fromServiceWorker ?? false,

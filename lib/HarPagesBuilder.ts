@@ -1,42 +1,71 @@
 import type { DebuggerEvent } from "./DebuggerEvent.ts";
 import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPageBuilder } from "./HarPageBuilder.ts";
+import type { Options } from "./index.ts";
 import { type FrameId, isHarPageEventName } from "./types.ts";
 import { calculateOnlyOnce } from "./util.ts";
 
 
 export class HarPagesBuilder {
-	constructor(protected readonly harEntriesBuilder: HarEntriesBuilder) {}
+	constructor(protected readonly harEntriesBuilder: HarEntriesBuilder, protected readonly options: Options) {}
 
 	byFrameId = new Map<FrameId, HarPageBuilder>();
 	pageStackWithTopAtIndex0 = [] as HarPageBuilder[];
 
-	getOrCreateByFrameId(frameId: FrameId) {
+	getOrCreateByFrameId = (frameId: FrameId) => {
 		let page = this.byFrameId.get(frameId);
 		if (page == null) {
-			page = new HarPageBuilder(frameId, this.harEntriesBuilder);
+			page = new HarPageBuilder(this.harEntriesBuilder, this.pageStackWithTopAtIndex0.length + 1, [frameId]);
 			this.byFrameId.set(frameId, page);
 			this.pageStackWithTopAtIndex0.unshift(page);
 		}
 		return page;
 	}
 
+	createForEntriesWithNoPage = (frameIds: FrameId[]) => {
+		const page = new HarPageBuilder(this.harEntriesBuilder, 0, frameIds);
+		for (const frameId of frameIds) {
+			this.byFrameId.set(frameId, page);
+		}
+		this.pageStackWithTopAtIndex0.unshift(page);
+		return page;
+	}
+
 	get topOfPageStack() { return this.pageStackWithTopAtIndex0[0]; }
 
 	protected validPageBuilders = calculateOnlyOnce( () =>
-		this.pageStackWithTopAtIndex0.toReversed().filter( page => page.isValid )
+		this.pageStackWithTopAtIndex0
+			.filter( page => page.isValid )
+			.toSorted( this.options.mimicChromeHar ?
+				((a,b) => a.orderCreated - b.orderCreated) :
+				((a,b) => a.timestamp - b.timestamp)
+			)
 	);
 
+	assignEntriesToPages = () => {
+		const entryBuildersSortedWithPage = this.harEntriesBuilder.getCompletedHarEntryBuilders()
+			.map( entryBuilder => ({entryBuilder, pageBuilder: entryBuilder.frameId == null ? undefined : this.byFrameId.get(entryBuilder.frameId)}) );
+		const entryBuildersWithPagesIdentifiedByTheirFrames =
+			entryBuildersSortedWithPage.filter( ({pageBuilder}) => pageBuilder != null );
+		const pagelessEntryBuilders = entryBuildersSortedWithPage.filter( ({pageBuilder}) => pageBuilder == null );
+
+		if (pagelessEntryBuilders.length > 0) {
+			// Create a new page for the pageless entries.
+			const pageBuilderForPagelessEntries = this.createForEntriesWithNoPage(pagelessEntryBuilders.map( e => e.entryBuilder.frameId ?? ""));
+			for (const {entryBuilder} of pagelessEntryBuilders) {
+				entryBuilder.assignToPage(pageBuilderForPagelessEntries);
+			}
+		}
+		for (const {entryBuilder, pageBuilder} of entryBuildersWithPagesIdentifiedByTheirFrames) {
+			entryBuilder.assignToPage(pageBuilder!);
+		}
+	}
+
 	assignPageIds = () => {
-		this.validPageBuilders().forEach( (page, index) => {
+		this.validPageBuilders()
+			.forEach( (page, index) => {
 			// Assign the next sequential page number.
 			page.id = `page_${index + 1}`;
-			// Copy the page number into all the entries for this page.
-			for (const frameId of page.frameIds) {
-				for (const entry of this.harEntriesBuilder.entryBuildersByFrameId.get(frameId) ?? []) {
-					entry.assignToPage(page);
-				}
-			}
 		});
 	}
 
