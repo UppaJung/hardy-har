@@ -1,6 +1,6 @@
 import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import type { HarEntryBuilder } from "./HarEntryBuilder.ts";
-import type { FrameId, HarPage, DevToolsProtocol, HarPageTimings, Timestamp, ISODateTimeString} from "./types.ts";
+import type { FrameId, Page, DevToolsProtocol, PageTimings, Timestamp, ISODateTimeString} from "./types/HttpArchiveFormat.ts";
 import { calculateOnlyOnce, roundToThreeDecimalPlaces, } from "./util.ts";
 
 export class HarPageBuilder {
@@ -54,7 +54,7 @@ export class HarPageBuilder {
 		return this.earliestRequest.startedDateTime;
 	}
 
-	get pageTimings(): HarPageTimings {
+	get pageTimings(): PageTimings {
 		const onContentLoad = this.domContentEventFiredEvent == null ? -1 :
 			roundToThreeDecimalPlaces(
 				(this.domContentEventFiredEvent.timestamp - this.timestamp) * 1000
@@ -70,7 +70,7 @@ export class HarPageBuilder {
 		};
 	}
 
-	get page(): HarPage {
+	get page(): Page {
 		const {id, title, startedDateTime, pageTimings} = this;
 		if (id == null) {
 			throw new Error("Cannot construct new Har format page unless the builder's id field has been set.")
@@ -80,7 +80,7 @@ export class HarPageBuilder {
 			startedDateTime,
 			title,
 			pageTimings,
-		} as const satisfies HarPage;
+		} as const satisfies Page;
 	}
 
 }

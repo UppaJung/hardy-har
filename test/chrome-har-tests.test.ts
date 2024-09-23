@@ -4,17 +4,19 @@ import { describe, it as test } from "jsr:@std/testing/bdd";
 import { expect } from "jsr:@std/expect";
 
 import { sortHarHeadersByName } from "../lib/headers.ts";
-import { harFromChromeHarMessageParamsObjects, type Options, type HarHeader, type NpmHarFormatTypes} from "../lib/index.ts";
+import { harFromChromeHarMessageParamsObjects, type Options, type Har} from "../mod.ts";
 
 import * as ch from 'npm:chrome-har@0.13.5';
 import * as path from "jsr:@std/path";
-import type { HarEntry } from "../lib/types.ts";
+import type { Entry } from "../lib/types/HttpArchiveFormat.ts";
+import { run } from "node:test";
 
+const runAll = async () => {
 const TestLogPath = path.resolve(import.meta.dirname!, 'test-logs');
 
-const fixChromeHarHeaders = (headers: HarHeader[]): HarHeader[] => {
+const fixChromeHarHeaders = (headers: Har.Header[]): Har.Header[] => {
   // Convert names to lowercase and eliminate duplicates
-  const headersMap = new Map<string, HarHeader>();
+  const headersMap = new Map<string, Har.Header>();
   for (const {name: nameMixedCase, ...rest} of headers) {
     const name = nameMixedCase.toLowerCase();
     if (!headersMap.has(name)) {
@@ -27,7 +29,7 @@ const fixChromeHarHeaders = (headers: HarHeader[]): HarHeader[] => {
 /**
  * Validate that, for each tcp connection, the previous request is fully completed before then next starts.
  */
-function validateRequestsOnSameConnectionDoNotOverlap(entries: HarEntry[]) {
+function validateRequestsOnSameConnectionDoNotOverlap(entries: Entry[]) {
   const entriesByConnection = entries
     .filter(
       entry => !['h3', 'h2', 'spdy/3.1'].includes(entry.response.httpVersion)
@@ -39,7 +41,7 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: HarEntry[]) {
       e.push(entry);
       entries.set(entry.connection, e);
       return entries;
-    }, new Map<string, HarEntry[]>());
+    }, new Map<string, Entry[]>());
   entriesByConnection.forEach((entries, connection) => {
     let previousEntry = entries.shift();
     for (const entry of entries) {
@@ -75,7 +77,7 @@ async function parsePerflog(perflogPath: string, options?: Options) {
   return har;
 }
 
-export function sortedByRequestTime(entries: HarEntry[]) {
+function sortedByRequestTime(entries: Entry[]) {
   return entries.sort((e1, e2) => e1._requestTime! - e2._requestTime!);
 }
 
@@ -89,22 +91,22 @@ describe('Mimimcs chrome-har', () => {
       const hardyHar = harFromChromeHarMessageParamsObjects(debuggerLog, options);
       expect(sortedByRequestTime(hardyHar.log.entries)).toEqual(hardyHar.log.entries);
       validateRequestsOnSameConnectionDoNotOverlap(hardyHar.log.entries);
-      const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as NpmHarFormatTypes.Har;
+      const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as Har.HttpArchive;
 
 
 
       chromeHar.log.entries.forEach( e => {
         // Chrome-har will list headers twice if it gets copies of them with lowercase and mixed-case names.
         // We'll also use this opportunity to sort them by name for reliable comparison with hardy-har.
-        e.request.headers = fixChromeHarHeaders(e.request.headers);
-        e.response.headers = fixChromeHarHeaders(e.response.headers);
+        Object.assign(e.request, {headers: fixChromeHarHeaders(e.request.headers)});
+        Object.assign(e.response, {headers: fixChromeHarHeaders(e.response.headers)});
         Object.assign(e.request, {cookies: [], headers: [], headersSize: 0});
         Object.assign(e.response, {cookies: [], headers: [], headersSize: 0, bodySize: -1});
         Object.assign(e, {pageref: undefined});
         delete e.response.content.compression;
         // Fix NaN values in initiator line, also fixing the incorrect typing of _initiator_line in the HAR types from npm.
         if ( isNaN(e._initiator_line as unknown as number) || ((e._initiator_line as unknown as number) == 1) ) {
-          delete e._initiator_line;
+          delete (e as {_initiator_line: unknown})._initiator_line;
         }
         if (filename === "iframe-not-attached.json") {
           Object.assign(e, {_chunks: []});
@@ -144,9 +146,8 @@ describe('Mimimcs chrome-har', () => {
         }
         if ( Math.abs( new Date(ch.startedDateTime).getTime() - new Date(hh.startedDateTime).getTime() ) <= 2 ) {
           // This is within amillisecond rounding error in display time. Ignore both times.
-          ch.startedDateTime = hh.startedDateTime;
+          Object.assign(ch, {startedDateTime: hh.startedDateTime});
         }
-      //        expect(ch).toEqual(hh);
       }
 
       const chromeHarEntriesMissingFromHardyHar = chromeHar.log.entries.filter(e => !hardyHar.log.entries.some(le => le._requestId === e._requestId));
@@ -395,3 +396,8 @@ test('Network.responseReceivedExtraInfo may be fired before or after responseRec
   // set-cookie header only exists in Network.responseReceivedExtraInfo event
   expect(entry?.response.headers.filter(x => x.name == 'set-cookie').length).toBe(1);
 });
+
+
+}
+
+runAll();

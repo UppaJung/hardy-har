@@ -1,6 +1,6 @@
 
 
-import type {DevToolsProtocol, HarHeader, NpmHarFormatTypes } from "./types.ts";
+import type {DevToolsProtocol, Header } from "./types/HttpArchiveFormat.ts";
 
 /**
  * Calculate the size of an HTTP request header represented by a HAR request.
@@ -51,7 +51,7 @@ export const calculateResponseHeaderSize = ({
 		).join("")
 	}\r\n`.length;
 
-export const sortHarHeadersByName = (headers: HarHeader[]) =>
+export const sortHarHeadersByName = (headers: Header[]) =>
 	headers.toSorted((a, b) => a.name.localeCompare(b.name));
 
 /**
@@ -76,7 +76,7 @@ export const headersRecordToArrayOfHarHeaders = <T extends Record<string, string
 		(result, [name, value]) => {
 			result.push({ name, value });
 			return result;
-		}, [] as HarHeader[]
+		}, [] as Header[]
 	);
 	return sortHarHeadersByName(harHeaders);
 }
@@ -84,7 +84,7 @@ export const headersRecordToArrayOfHarHeaders = <T extends Record<string, string
 /**
  * Perform case-insensitive search for a header in a headers object.
  */
-export const getHarHeaderValue = <T extends Record<string, string>>(headers: NpmHarFormatTypes.Header[] | undefined, headerToFind: string): string | undefined => {
+export const getHarHeaderValue = <T extends Record<string, string>>(headers: Header[] | undefined, headerToFind: string): string | undefined => {
 	const headerToFindLc = headerToFind.toLowerCase();
 	return (headers ?? []).find(({name}) => name.toLowerCase() === headerToFindLc)?.value;
 }

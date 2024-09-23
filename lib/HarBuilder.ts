@@ -1,26 +1,11 @@
-import type { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
+import type { DebuggerEventOrMetaEvent } from "./types/DebuggerEvent.ts";
 import { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPagesBuilder } from "./HarPagesBuilder.ts";
 import { defaultOptions, type Options, type PopulatedOptions } from "./Options.ts";
-import type { ChromeHarMethodParamsObject, HarEntry, HarEventNameAndObject, HarEventNameAndObjectTuple, HarEventOrMetaEventName, HarPage } from "./types.ts";
-
-const PackageName = "hardy-har";
-const PackageVersion = "0.1.0";
-
-export interface HttpArchiveLog {
-	readonly version: "1.2";
-	readonly creator: {
-		readonly name: string;
-			readonly version: `${number}.${number}.${number}`;
-	};
-	readonly pages: HarPage[];
-	readonly entries: HarEntry[];
-	readonly comment: string;
-}
-
-export interface HttpArchive {
-	log: HttpArchiveLog;
-}
+import type { HttpArchive } from "./types/HttpArchiveFormat.ts";
+import type { ChromeHarMethodParamsObject, HarEventNameAndObject, HarEventNameAndObjectTuple,
+	HarEventOrMetaEventName } from "./types/HarDebuggerEvents.ts";
+import * as packageDetails from "./package.ts";
 
 export class HarBuilder {
 	readonly options: PopulatedOptions;
@@ -39,12 +24,14 @@ export class HarBuilder {
 		const {pages} = this.pagesBuilder;
 		const entries = this.entriesBuilder.getCompletedHarEntries();
 
+		const {name, version} = packageDetails;
+
 		return {
 			log: {
 				version: '1.2',
 				creator: {
-					name: PackageName,
-					version: PackageVersion,
+					name,
+					version,
 				},
 				pages,
 				entries,

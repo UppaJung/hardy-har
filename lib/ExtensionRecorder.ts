@@ -3,14 +3,11 @@ const chrome = globalThis.chrome;
 
 // requires types from npm:@types/chrome
 import {
-	type HarEvent,
-	type HarEventNameAndObject,
-	type DevToolsProtocolGetResponseBodyRequest,
-	type DevToolsProtocolGetResponseBodyResponse,
-	GetResponseBodyResponseMetaEventName,
 	isHarEventName,
   harFromNamedDebuggerEvents,
-} from "./index.ts";
+} from "../mod.ts";
+import type { DevToolsProtocolGetResponseBodyRequest, DevToolsProtocolGetResponseBodyResponse, HarEvent, HarEventNameAndObject } from "./types/HarDebuggerEvents.ts";
+import { GetResponseBodyResponseMetaEventName } from "./types/type-constants.ts";
 
 export const recordBrowserTabToHarFromWithinExtension = async (
 	tabId: number,

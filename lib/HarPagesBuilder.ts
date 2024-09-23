@@ -1,10 +1,11 @@
-import type { DebuggerEvent } from "./DebuggerEvent.ts";
+import type { DebuggerEvent } from "./types/DebuggerEvent.ts";
 import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPageBuilder } from "./HarPageBuilder.ts";
-import type { HarPage } from "./index.ts";
 import type { Options } from "./Options.ts";
-import { type FrameId, isHarPageEventName } from "./types.ts";
+import type {Har} from "./types/index.ts"
+import { type FrameId } from "./types/HttpArchiveFormat.ts";
 import { calculateOnlyOnce } from "./util.ts";
+import { isHarPageEventName } from "./types/type-checkers.ts";
 
 
 export class HarPagesBuilder {
@@ -70,7 +71,7 @@ export class HarPagesBuilder {
 		});
 	}
 
-	get pages(): HarPage[]  { 
+	get pages(): Har.Page[]  { 
 		return this.validPageBuilders()
 			.map( page => page.page );
 	}

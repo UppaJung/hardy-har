@@ -10,10 +10,9 @@ type DebuggerPageEventNameAndObject =
 	["Page.frameRequestedNavigation", DevToolsProtocol.Page.FrameRequestedNavigationEvent] |
 	["Page.navigatedWithinDocument", DevToolsProtocol.Page.NavigatedWithinDocumentEvent] |
 	never;
-	export type DebuggerPageEventName = DebuggerPageEventNameAndObject[0];
-	export type DebuggerPageEvent<T extends DebuggerPageEventName = DebuggerPageEventName> =
+export type DebuggerPageEventName = DebuggerPageEventNameAndObject[0];
+export type DebuggerPageEvent<T extends DebuggerPageEventName = DebuggerPageEventName> =
 	Extract<DebuggerPageEventNameAndObject, [T, unknown]>[1]
-
 
 export type DebuggerNetworkWebSocketEventNameAndObject =
 	["Network.webSocketFrameSent", DevToolsProtocol.Network.WebSocketFrameSentEvent] |
@@ -42,12 +41,8 @@ export type DebuggerNetworkHttpEventNameAndObject =
 	export type DebuggerNetworkHttpEvent<T extends DebuggerNetworkHttpEventName = DebuggerNetworkHttpEventName> =
 	Extract<DebuggerNetworkHttpEventNameAndObject, [T, unknown]>[1]
 
-export const DebuggerMetaEventNameNetworkGetResponseBodyResponse = "Network.getResponseBodyResponse";
-export type DebuggerMetaEventNameNetworkGetResponseBodyResponse = typeof DebuggerMetaEventNameNetworkGetResponseBodyResponse;
-export const DebuggerNetworkMetaEventNames = [
-	DebuggerMetaEventNameNetworkGetResponseBodyResponse,
-] as const;
-export type DebuggerNetworkMetaEventName = typeof DebuggerNetworkMetaEventNames[number];
+export type DebuggerMetaEventNameNetworkGetResponseBodyResponse = "Network.getResponseBodyResponse";
+export type DebuggerNetworkMetaEventName = DebuggerMetaEventNameNetworkGetResponseBodyResponse;
 export type DebuggerNetworkMetaEventNameAndObject =
 	[DebuggerMetaEventNameNetworkGetResponseBodyResponse, {requestId: DevToolsProtocol.Network.RequestId} & DevToolsProtocol.Network.GetResponseBodyResponse] | 
 	never

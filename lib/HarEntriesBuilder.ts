@@ -1,9 +1,10 @@
-import type {DevToolsProtocol, HarEntry} from "./types.ts";
+import type {DevToolsProtocol, Entry} from "./types/HttpArchiveFormat.ts";
 import { HarEntryBuilder } from "./HarEntryBuilder.ts";
 import type { PopulatedOptions } from "./Options.ts";
-import { type FrameId, isHarNetworkEventOrMetaEventName } from "./types.ts";
+import { type FrameId } from "./types/HttpArchiveFormat.ts";
+import { isHarNetworkEventOrMetaEventName } from "./types/type-checkers.ts";
 import { calculateOnlyOnce } from "./util.ts";
-import type { DebuggerEventOrMetaEvent } from "./DebuggerEvent.ts";
+import type { DebuggerEventOrMetaEvent } from "./types/DebuggerEvent.ts";
 import { TimeLord } from "./TimeLord.ts";
 
 const hasGetResponseBodyResponseInResponse = (event: unknown): event is {requestId: DevToolsProtocol.Network.RequestId} & {response: DevToolsProtocol.Network.GetResponseBodyResponse} =>
@@ -25,10 +26,10 @@ export class HarEntriesBuilder {
 
 	getCompletedHarEntryBuildersSortedByRequestTime: () => HarEntryBuilder[] = calculateOnlyOnce( () =>
 		this.getCompletedHarEntryBuilders()
-			.toSorted( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds )
+			.sort( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds )
 	);
 
-	getCompletedHarEntries: () => HarEntry[] = calculateOnlyOnce( () => {
+	getCompletedHarEntries: () => Entry[] = calculateOnlyOnce( () => {
 		const sortedValidEntryBuilders = this.getCompletedHarEntryBuildersSortedByRequestTime();
 		const harEntries = sortedValidEntryBuilders.map((entry) => entry.entry);
 		const nonNullHarEntries = harEntries.filter(entry => entry != null)

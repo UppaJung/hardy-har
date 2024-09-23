@@ -1,4 +1,4 @@
-import type {ConnectionIdString, DevToolsProtocol, FrameId, HarChunk, HarPostData, ISODateTimeString, Milliseconds, MonotonicTimeInSeconds, NpmHarFormatTypes, SecondsFromUnixEpoch} from "./types.ts";
+import type {ConnectionIdString, DevToolsProtocol, FrameId, Content, QueryString, Chunk, PostData, ISODateTimeString, Milliseconds, MonotonicTimeInSeconds, SecondsFromUnixEpoch, Cache} from "./types/HttpArchiveFormat.ts";
 import { networkCookieToHarFormatCookie, parseCookie, parseRequestCookies, parseResponseCookies } from "./cookies.ts";
 import { calculateRequestHeaderSize, calculateResponseHeaderSize, getHeaderValue, headersRecordToArrayOfHarHeaders } from "./headers.ts";
 import {
@@ -8,11 +8,11 @@ import {
 	roundToThreeDecimalPlaces
 } from "./util.ts";
 import type { PopulatedOptions } from "./Options.ts";
-import { WebSocketMessageOpcode, type HarRequest, type HarResponse, type HarTimings, type WebSocketDirectionAndEvent, type HarWebSocketMessage } from "./types.ts";
+import { WebSocketMessageOpcode, type Request, type Response, type Timings, type WebSocketDirectionAndEvent, type WebSocketMessage } from "./types/HttpArchiveFormat.ts";
 import type { HarPageBuilder } from "./HarPageBuilder.ts";
 import urlParser from "node:url";
 import type { TimeLord } from "./TimeLord.ts";
-import type { HarEntry } from "./types.ts";
+import type { Har } from "./types/index.ts";
 
 
 function getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(startMs: number | undefined, endMs: number | undefined) {
@@ -313,11 +313,11 @@ export class HarEntryBuilder {
 		return urlParser.format(this.requestParsedUrl);
 	}
 
-	private get queryString(): NpmHarFormatTypes.QueryString[] {
+	private get queryString(): QueryString[] {
 		return toNameValuePairs(this.requestParsedUrl.query);
 	}
 
-	private get postData(): HarPostData | undefined {
+	private get postData(): PostData | undefined {
 		const requestHeaders = this.options.mimicChromeHar ? this.requestWillBeSentEvent.request.headers : this.request.headers;
 		return parsePostData(getHeaderValue(requestHeaders, 'Content-Type'), this.request.postData, this.options);
 	}
@@ -377,7 +377,7 @@ export class HarEntryBuilder {
 			text: responseBodyText,
 			...encodingObj,
 			...compression_obj,
-		} satisfies NpmHarFormatTypes.Content
+		} satisfies Content
 				
 	}
 
@@ -389,7 +389,7 @@ export class HarEntryBuilder {
 		return this.resourceChangedPriorityEvent?.newPriority ?? this._initialPriority;
 	}
 
-	private get initiatorFields(): Partial<HarEntry> {
+	private get initiatorFields(): Partial<Har.Entry> {
 		const {initiator} = this.requestWillBeSentEvent;
 		const baseFields = {
 			_initiator_detail: JSON.stringify(initiator),
@@ -417,9 +417,9 @@ export class HarEntryBuilder {
 		return baseFields;
 	}
 
-	private get resourceType(): NpmHarFormatTypes.Entry["_resourceType"] | undefined {
+	private get resourceType(): Har.Entry["_resourceType"] | undefined {
 		// chrome-har team notes: Chrome's DevTools Frontend returns this field in lower case
-		return (this.requestWillBeSentEvent?.type?.toLowerCase() ?? undefined) as NpmHarFormatTypes.Entry["_resourceType"] | undefined;
+		return (this.requestWillBeSentEvent?.type?.toLowerCase() ?? undefined) as Har.Entry["_resourceType"] | undefined;
 	}
 
 	private get isSupportedProtocol(): boolean {
@@ -471,7 +471,7 @@ export class HarEntryBuilder {
 	 	return new Date(this.requestStartTimeInSecondsFromUnixEpoch * 1000).toISOString() as ISODateTimeString;
 	}
 
-	private get cache(): NpmHarFormatTypes.Cache {
+	private get cache(): Cache {
 		if (this.requestServedFromCacheEvent == null) return {};
 		return {
 			beforeRequest: {
@@ -538,7 +538,7 @@ export class HarEntryBuilder {
 		return this.wasHttp2Push ? {_was_pushed: 1} : {};
 	}
 
-	private get _chunks_obj(): {readonly _chunks?: HarChunk[]} {
+	private get _chunks_obj(): {readonly _chunks?: Chunk[]} {
 		if (this.dataReceivedEvents == null || this.dataReceivedEvents.length == 0) {
 			return {};
 		}
@@ -549,7 +549,7 @@ export class HarEntryBuilder {
 						// @UppaJung TODO -- verify that these timestamp offsets are really supposed to be offset from the page.
 						roundToThreeDecimalPlaces( (e.timestamp - this.page.timestamp) * 1000),
 					bytes: e.dataLength
-				} satisfies NpmHarFormatTypes.Chunk as NpmHarFormatTypes.Chunk
+				} satisfies Chunk as Chunk
 			))
 		}
 	}
@@ -565,7 +565,7 @@ export class HarEntryBuilder {
 	/**
 	 * An entry field containing all the web socket messages sent over a requestId generated via the "ws:" protocol.
 	 */
-	get _webSocketMessagesObj(): {readonly _webSocketMessages?: HarWebSocketMessage[]} {
+	get _webSocketMessagesObj(): {readonly _webSocketMessages?: WebSocketMessage[]} {
 		if (this.webSocketEvents.length == 0 || this.options.mimicChromeHar) {
 			return {};
 		}
@@ -580,11 +580,11 @@ export class HarEntryBuilder {
 				opcode: event.response.opcode === 1 ? WebSocketMessageOpcode.Utf8Text : WebSocketMessageOpcode.Base64EncodedBinary,
 				time: event.timestamp,
 				data: event.response.payloadData
-			} as HarWebSocketMessage))
+			} as WebSocketMessage))
 		};
 	}
 
-	private get timings(): HarTimings {
+	private get timings(): Timings {
 		// Important notes because these damn protocols use names that don't specify their units
 		// all timestamps in seconds
 		// all fields of response.timing are in milliseconds
@@ -620,7 +620,7 @@ export class HarEntryBuilder {
 		};
 	}
 
-	private get harRequest(): HarRequest {
+	private get harRequest(): Request {
 		return {
 			method: this.method,
 			url: this.requestUrl,
@@ -632,10 +632,10 @@ export class HarEntryBuilder {
 			headersSize: this.requestHeadersSize,
 			httpVersion: this.httpVersion ?? '',
 			...this._isLinkPreloadObj,
-		} as const satisfies HarRequest
+		} as const satisfies Request
 	}
 
-	private get harResponse(): HarResponse {
+	private get harResponse(): Response {
 		const { response } = this;
 		const _transferSize = this.options.mimicChromeHar ?
 			(this.loadingFinishedEvent?.encodedDataLength ?? this.response.encodedDataLength) :
@@ -656,13 +656,13 @@ export class HarEntryBuilder {
 			fromEarlyHints: this.response.fromEarlyHints ?? false,
 			fromServiceWorker: this.response.fromServiceWorker ?? false,
 			fromPrefetchCache: this.response.fromPrefetchCache ?? false,
-		} as const satisfies HarResponse;
+		} as const satisfies Response;
 	}
 
 	/**
-	 * The final HarEntry object **except for `pageRef`**, which should be populated later.
+	 * The final Har.Entry object **except for `pageRef`**, which should be populated later.
 	 */
-	get entry(): HarEntry | undefined {
+	get entry(): Har.Entry | undefined {
 		if (!this.isValidForInclusionInHarArchive) return undefined;
 		return {
 			...this.initiatorFields,

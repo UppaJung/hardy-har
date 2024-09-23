@@ -1,5 +1,5 @@
 import type { Options } from "./Options.ts";
-import type { HarPostData, NpmHarFormatTypes } from "./types.ts";
+import type { PostData, QueryString } from "./types/HttpArchiveFormat.ts";
 
 export const calculateOnlyOnce = <T>(calculation: () => T ): () => T => {
 	let hasBeenCalculated: boolean = false;
@@ -35,12 +35,12 @@ export function toNameValuePairs(object: Record<string, string | string[] | unde
 		} else {
 			return result.concat([{ name, value: value ?? '' }]);
 		}
-	}, [] as NpmHarFormatTypes.QueryString[]);
+	}, [] as QueryString[]);
 }
 
 export function parseUrlEncoded(data: string) {
 	try {
-		const result: NpmHarFormatTypes.QueryString[] =
+		const result: QueryString[] =
 		 [...new URL(`http://localhost/?${data}`).searchParams]
 		 .map(( [name, value] ) => ({name, value}));
 		 return result;
@@ -49,7 +49,7 @@ export function parseUrlEncoded(data: string) {
 	}
 }
 
-export function parsePostData(contentType: string | undefined, postData: string | undefined, options: Options): HarPostData | undefined {
+export function parsePostData(contentType: string | undefined, postData: string | undefined, options: Options): PostData | undefined {
 	if (!isNonEmptyString(contentType) || !isNonEmptyString(postData)) {
 		return undefined;
 	}

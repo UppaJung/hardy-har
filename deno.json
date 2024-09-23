@@ -1,8 +1,9 @@
 {
   "name": "@stuartschechter/hardy-har",
   "version": "0.1.0",
-  "exports": "./lib/index.ts",
+  "exports": "./mod.ts",
   "tasks": {
+    "build-npm": "deno run -A ./scripts/build-npm-package.ts"
   },
   "imports": {
   },
