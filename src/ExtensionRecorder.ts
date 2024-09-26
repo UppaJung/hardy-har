@@ -1,11 +1,9 @@
-import {chrome} from "npm:@types/chrome";
 const chrome = globalThis.chrome;
 
-// requires types from npm:@types/chrome
 import {
 	isHarEventName,
   harFromNamedDebuggerEvents,
-} from "../mod.ts";
+} from "./index.ts";
 import type { DevToolsProtocolGetResponseBodyRequest, DevToolsProtocolGetResponseBodyResponse, HarEvent, HarEventNameAndObject } from "./types/HarDebuggerEvents.ts";
 import { GetResponseBodyResponseMetaEventName } from "./types/type-constants.ts";
 

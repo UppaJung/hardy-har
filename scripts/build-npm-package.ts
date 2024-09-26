@@ -1,6 +1,6 @@
 // ex. scripts/build_npm.ts
 import { build, emptyDir } from "jsr:@deno/dnt";
-import {packageDetails} from "../lib/package.ts";
+import {packageDetails} from "../src/package.ts";
 
 await emptyDir("./npm");
 

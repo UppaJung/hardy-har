@@ -1,0 +1,33 @@
+{
+  "compilerOptions": {
+    "rootDir": "./src",
+    "lib": ["ES2023", "DOM.Iterable", "DOM"],
+    "moduleResolution": "node",
+    "declaration": true,
+    "allowImportingTsExtensions": true,
+    "noImplicitAny": true,
+    "noEmitOnError": true,
+    "removeComments": false,
+		"strict": true,
+		"noImplicitThis": true,
+		"noFallthroughCasesInSwitch": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"strictNullChecks": true,
+		"strictFunctionTypes": false,
+    "sourceMap": true,
+    "target": "ES2023",
+    "outDir": "dist",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "emitDeclarationOnly": true,
+    "resolveJsonModule": true
+  },
+  "include": [
+    "src/**/*", "./index"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

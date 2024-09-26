@@ -1,16 +1,15 @@
 // spell-checker: disable
 
-import { describe, it as test } from "jsr:@std/testing/bdd";
-import { expect } from "jsr:@std/expect";
+import { describe, it as test } from "node:test";
+import { expect } from "expect";
 
-import { sortHarHeadersByName } from "../lib/headers.ts";
-import { harFromChromeHarMessageParamsObjects, type Options, type Har} from "../mod.ts";
+import { sortHarHeadersByName } from "../src/headers.ts";
+import { harFromChromeHarMessageParamsObjects, type Options, type Har} from "../src/index.ts";
 
-import * as ch from 'npm:chrome-har@0.13.5';
-import * as path from "jsr:@std/path";
-import type { Entry } from "../lib/types/HttpArchiveFormat.ts";
-import { run } from "node:test";
-
+import * as ch from "chrome-har";
+import * as path from "path";
+import type { Entry } from "../src/types/HttpArchiveFormat.ts";
+import {readdir, readFile} from "fs/promises";
 const runAll = async () => {
 const TestLogPath = path.resolve(import.meta.dirname!, 'test-logs');
 
@@ -50,10 +49,10 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: Entry[]) {
           previousEntry._requestTime! + previousEntry.time / 1000;
         const timings = entry.timings;
         const currentEntryStartTime = entry._requestTime! + Math.max(0, timings.blocked!) / 1000;
-        expect(
-          currentEntryStartTime >= previousEnd,
-          `Requests ${previousEntry._requestId } and ${entry._requestId} overlap on connection ${connection}`
-        ).toBe(true);
+        expect(currentEntryStartTime).toBeGreaterThanOrEqual(previousEnd);
+        //   currentEntryStartTime >= previousEnd,
+        //   `Requests ${previousEntry._requestId } and ${entry._requestId} overlap on connection ${connection}`
+        // ).toBe(true);
       }
       previousEntry = entry;
     }
@@ -65,14 +64,14 @@ function perfLogPath(filename: string) {
 }
 
 async function perflogs() {
-  const dirListing = await Array.fromAsync(Deno.readDir(TestLogPath));
-  return dirListing.filter(e => e.isFile && path.extname(e.name) === '.json').map( e => e.name );
+  const dirListing = await readdir(TestLogPath, {withFileTypes: true});
+  return dirListing.filter(e => e.isFile() && path.extname(e.name) === '.json').map( e => e.name );
 }
 
 const filenames = await perflogs();
 
 async function parsePerflog(perflogPath: string, options?: Options) {
-  const log = JSON.parse(await Deno.readTextFile(perflogPath));
+  const log = JSON.parse(await readFile(perflogPath, {encoding: 'utf8'}));
   const har = harFromChromeHarMessageParamsObjects(log, options);
   return har;
 }
@@ -87,11 +86,11 @@ describe('Mimimcs chrome-har', () => {
     .filter( f => f !== 'missing-response.json' )
   ) {
     test (`${filename}`, async () => {
-      const debuggerLog = JSON.parse(await Deno.readTextFile(perfLogPath(filename)));
+      const debuggerLog = JSON.parse(await readFile(perfLogPath(filename), {encoding: 'utf8'}));
       const hardyHar = harFromChromeHarMessageParamsObjects(debuggerLog, options);
       expect(sortedByRequestTime(hardyHar.log.entries)).toEqual(hardyHar.log.entries);
       validateRequestsOnSameConnectionDoNotOverlap(hardyHar.log.entries);
-      const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as Har.HttpArchive;
+      const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as unknown as Har.HttpArchive;
 
 
 

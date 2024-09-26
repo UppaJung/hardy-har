@@ -2,7 +2,7 @@
 //   https://github.com/sitespeedio/chrome-har/blob/5b076f8c8e578e929670761dcc31345e4e87103c/index.js
 
 import type {DevToolsProtocol, ISODateTimeString} from "./types/HttpArchiveFormat.ts";
-import {Cookie} from "npm:tough-cookie@5.0.0";
+import {Cookie} from "tough-cookie";
 import type { Har } from "./types/index.ts";
 
 export const networkCookieToHarFormatCookie = ({expires, ...rest}: DevToolsProtocol.Network.Cookie): Har.Cookie => ({

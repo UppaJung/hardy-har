@@ -84,7 +84,7 @@ export const headersRecordToArrayOfHarHeaders = <T extends Record<string, string
 /**
  * Perform case-insensitive search for a header in a headers object.
  */
-export const getHarHeaderValue = <T extends Record<string, string>>(headers: Header[] | undefined, headerToFind: string): string | undefined => {
+export const getHarHeaderValue = (headers: Header[] | undefined, headerToFind: string): string | undefined => {
 	const headerToFindLc = headerToFind.toLowerCase();
 	return (headers ?? []).find(({name}) => name.toLowerCase() === headerToFindLc)?.value;
 }

@@ -1,5 +1,5 @@
 import type {DevToolsProtocol} from './DebuggerEvent.ts';
-import type * as NpmHarFormatTypes from 'npm:@types/har-format@1.2.15';
+import type * as NpmHarFormatTypes from 'har-format';
 
 export type {DevToolsProtocol};
 
@@ -362,7 +362,7 @@ export type WebSocketDirectionAndEvent = {
 	type: "receive", event: DevToolsProtocol.Network.WebSocketFrameReceivedEvent,
 }
 export type WebSocketMessageOpcode = typeof WebSocketMessageOpcode[keyof typeof WebSocketMessageOpcode];
-type x = typeof WebSocketMessageOpcode[keyof typeof WebSocketMessageOpcode];
+// type _x = typeof WebSocketMessageOpcode[keyof typeof WebSocketMessageOpcode];
 
 export interface CacheDetails {
 	expires?: ISODateTimeString | undefined;
@@ -424,7 +424,7 @@ export interface Entry {
 	readonly _was_pushed?: number;
 	readonly _webSocketMessages?: WebSocketMessage[];
 };
-const _validateHarEntry: Omit<NpmHarFormatTypes.Entry, `_${string}`>  = undefined as unknown as Entry;
+// const _validateHarEntry: Omit<NpmHarFormatTypes.Entry, `_${string}`>  = undefined as unknown as Entry;
 
 export interface Request extends NpmHarFormatTypes.Request {
 	_isLinkPreload?: boolean;

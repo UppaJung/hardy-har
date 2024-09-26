@@ -3,14 +3,12 @@ import { networkCookieToHarFormatCookie, parseCookie, parseRequestCookies, parse
 import { calculateRequestHeaderSize, calculateResponseHeaderSize, getHeaderValue, headersRecordToArrayOfHarHeaders } from "./headers.ts";
 import {
 	parsePostData,
-	toNameValuePairs,
 	isHttp1x,
 	roundToThreeDecimalPlaces
 } from "./util.ts";
 import type { PopulatedOptions } from "./Options.ts";
 import { WebSocketMessageOpcode, type Request, type Response, type Timings, type WebSocketDirectionAndEvent, type WebSocketMessage } from "./types/HttpArchiveFormat.ts";
 import type { HarPageBuilder } from "./HarPageBuilder.ts";
-import urlParser from "node:url";
 import type { TimeLord } from "./TimeLord.ts";
 import type { Har } from "./types/index.ts";
 
@@ -109,9 +107,9 @@ export class HarEntryBuilder {
 	private get responseBody() {
 		return this.getResponseBodyResponse?.body;
 	}
-	private get responseBase64Encoded() {
-		return this.getResponseBodyResponse?.base64Encoded;
-	}
+	// private get responseBase64Encoded() {
+	// 	return this.getResponseBodyResponse?.base64Encoded;
+	// }
 
 	private get httpVersion(): string | undefined {
 		return this.response.protocol;
@@ -303,23 +301,36 @@ export class HarEntryBuilder {
 	}
 
 	private get requestParsedUrl() {
-		return urlParser.parse(
-				this.request.url + (this.request.urlFragment ?? ''),
-				true
-			)
+		const toParse = this.request.url + (this.request.urlFragment ?? '')
+		try {
+			return new URL(toParse);
+		} catch {
+			return undefined;
+		}
 	}
 
-	get requestUrl(): string {
-		return urlParser.format(this.requestParsedUrl);
+	get requestUrl(): string | undefined {
+		if (this.options.mimicChromeHar) {
+			return this.requestParsedUrl?.href
+				.replaceAll('{', '%7B').replaceAll('}', '%7D').replaceAll('|', '%7C').replaceAll("'", '%27');
+		} else {
+			return this.requestParsedUrl?.href;
+		}
 	}
 
 	private get queryString(): QueryString[] {
-		return toNameValuePairs(this.requestParsedUrl.query);
+		const result = [] as QueryString[];
+		this.requestParsedUrl?.searchParams.forEach((value, name) => {
+			result.push({name, value});
+		});
+		return result;
 	}
 
 	private get postData(): PostData | undefined {
 		const requestHeaders = this.options.mimicChromeHar ? this.requestWillBeSentEvent.request.headers : this.request.headers;
-		return parsePostData(getHeaderValue(requestHeaders, 'Content-Type'), this.request.postData, this.options);
+		const contentTypeHeader = getHeaderValue(requestHeaders, 'Content-Type');
+		if (contentTypeHeader == null) return undefined;
+		return parsePostData(contentTypeHeader, this.request.postData, this.options);
 	}
 
 	private get _isLinkPreloadObj(): {_isLinkPreload: true} | undefined {
@@ -623,7 +634,7 @@ export class HarEntryBuilder {
 	private get harRequest(): Request {
 		return {
 			method: this.method,
-			url: this.requestUrl,
+			url: this.requestUrl ?? '',
 			queryString: this.queryString,
 			postData: this.postData,
 			bodySize: this.requestBodySize,
