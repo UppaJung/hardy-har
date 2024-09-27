@@ -33,6 +33,10 @@ export const NamesOfDebuggerPageEventsToRecord = [
 	"Page.navigatedWithinDocument",
 ] as const satisfies DebuggerPageEventName[];
 
+/**
+ * A list of all the Chrome DevTools events
+ * that should be passed to hardy-har.
+ */
 export const NamesOfDebuggerEventsToRecord = [
 	...NamesOfDebuggerNetworkHttpEventsToRecord,
 	...NamesOfDebuggerWebSocketEventsToRecord,

@@ -1,5 +1,8 @@
 const chrome = globalThis.chrome;
 
+/**
+ * Sample code for generating a HAR file from within a browser extension.
+ */
 import {
 	isHarEventName,
   harFromNamedDebuggerEvents,
@@ -13,7 +16,10 @@ export const recordBrowserTabToHarFromWithinExtension = async (
 ) => {
 	const debuggerEventArray = [] as HarEventNameAndObject[]; 
 	
-	const onDebugEvent = async (source: chrome.debugger.Debuggee, eventName: string, event: unknown) => {
+	/**
+	 * Handle events from the Chrome DevTools Protocol.
+	 */
+	const onDebuggerEvent = async (source: chrome.debugger.Debuggee, eventName: string, event: unknown) => {
 		// Ignore debugger events for other tabs
 		if (source.tabId !== tabId) return;
 		// Ignore events that aren't needed to generate HARs 
@@ -29,6 +35,7 @@ export const recordBrowserTabToHarFromWithinExtension = async (
 				{requestId} satisfies DevToolsProtocolGetResponseBodyRequest)
 			)) as DevToolsProtocolGetResponseBodyResponse | undefined;
 			if (responseBodyObj != null) {
+				// Add a meta-event that contains the response body
 				debuggerEventArray.push({
 					eventName: GetResponseBodyResponseMetaEventName,
 					event: {requestId, ...responseBodyObj} satisfies HarEvent<typeof GetResponseBodyResponseMetaEventName>
@@ -38,12 +45,31 @@ export const recordBrowserTabToHarFromWithinExtension = async (
 	};
 
 	try {
+		/**
+		 * Attach debugger to the tab to be observed and listen for events
+		 * 
+		 * (if this fails, make sure you extension has the "debugger"
+		 *  permission in its manifest)
+		 */
 		await chrome.debugger.attach({tabId}, '1.3');
 		await chrome.debugger.sendCommand({tabId}, "Page.enable");
 		await chrome.debugger.sendCommand({tabId}, "Network.enable");
-		chrome.debugger.onEvent.addListener(onDebugEvent);
+		chrome.debugger.onEvent.addListener(onDebuggerEvent);
 
+		/*
+		 * This is where you do whatever you want to record.
+		 *
+		 * Alternatively, the code above could be in a function called
+		 * `startRecording` and the code below the following line
+		 * could be in a function called `stopRecording`.
+
+		 */
 		await executeBrowserTaskToRecord();
+
+		/**
+		 * Call the strongly-typed API to hardy-har because type checkers
+		 * prevent bugs!
+		 */
 		return harFromNamedDebuggerEvents(debuggerEventArray);
 
 	} finally {

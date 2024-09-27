@@ -1,7 +1,7 @@
 {
   "name": "@uppajung/hardy-har",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A Hardy HTTP Archive (HAR) Generator ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
