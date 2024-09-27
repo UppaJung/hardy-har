@@ -7,6 +7,11 @@ import { type FrameId } from "./types/HttpArchiveFormat.ts";
 import { calculateOnlyOnce } from "./util.ts";
 import { isHarPageEventName } from "./types/type-checkers.ts";
 
+/**
+ * This class is responsible for building the pages of a HAR by handling
+ * Page events through its `onPageEvent` method and then returning
+ * the entries via its `pages` getter.
+ */
 
 export class HarPagesBuilder {
 	constructor(protected readonly harEntriesBuilder: HarEntriesBuilder, protected readonly options: Options) {}

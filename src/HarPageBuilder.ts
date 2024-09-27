@@ -3,6 +3,10 @@ import type { HarEntryBuilder } from "./HarEntryBuilder.ts";
 import type { FrameId, Page, DevToolsProtocol, PageTimings, Timestamp, ISODateTimeString} from "./types/HttpArchiveFormat.ts";
 import { calculateOnlyOnce, roundToThreeDecimalPlaces, } from "./util.ts";
 
+/**
+ * This builder holds a set of events associated with a HAR page and then,
+ * after all data has been populated, generates a HAR page object.
+ */
 export class HarPageBuilder {
 	id?: string;
 	frameAttachedEvents = [] as  DevToolsProtocol.Page.FrameAttachedEvent[];

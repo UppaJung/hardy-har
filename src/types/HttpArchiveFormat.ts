@@ -357,7 +357,7 @@ export const WebSocketMessageOpcode = {
 } as const;
 export type WebSocketFrameDirection = "receive" | "send";
 export type WebSocketDirectionAndEvent = {
-	type: 'sent', event: DevToolsProtocol.Network.WebSocketFrameSentEvent,
+	type: 'send', event: DevToolsProtocol.Network.WebSocketFrameSentEvent,
 } | {
 	type: "receive", event: DevToolsProtocol.Network.WebSocketFrameReceivedEvent,
 }

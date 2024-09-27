@@ -10,9 +10,8 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node --import tsx --test test/*.test.ts",
-    "test:vscode-only-har": "node --import tsx --test test/debugger-events-to-har/test/chrome-har-tests.test.ts",
-    "test:vscode": "node --import tsx --test test/**/*.test.ts test/**/**/*.test.ts",
+    "test": "node --import tsx --test src/test/*.test.ts",
+    "test:vscode": "node --import tsx --test src/*.test.ts test/**/**/*.test.ts",
     "build": "rm -rf dist && node esbuild.js && tsc --build",
     "clean": "tsc --build --clean"
   },

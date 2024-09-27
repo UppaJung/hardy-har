@@ -1,16 +1,15 @@
 // spell-checker: disable
 
-// eslint-disable-file @typescript-eslint/no-non-null-assertion
-
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { describe, it as test } from "node:test";
 import { expect } from "expect";
 
-import { sortHarHeadersByName } from "../src/headers.ts";
-import { harFromChromeHarMessageParamsObjects, type Options, type Har} from "../src/index.ts";
+import { sortHarHeadersByName } from "../headers.ts";
+import { harFromChromeHarMessageParamsObjects, type Options, type Har} from "../index.ts";
 
 import * as ch from "chrome-har";
 import * as path from "path";
-import type { Entry } from "../src/types/HttpArchiveFormat.ts";
+import type { Entry } from "../types/HttpArchiveFormat.ts";
 import {readdir, readFile} from "fs/promises";
 const runAll = async () => {
 const TestLogPath = path.resolve(import.meta.dirname!, 'test-logs');
@@ -43,7 +42,7 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: Entry[]) {
       entries.set(entry.connection, e);
       return entries;
     }, new Map<string, Entry[]>());
-  entriesByConnection.forEach((entries, _connection) => {
+  entriesByConnection.forEach((entries, /* _connection */) => {
     let previousEntry = entries.shift();
     for (const entry of entries) {
       if (previousEntry != null) {

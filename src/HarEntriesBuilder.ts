@@ -12,23 +12,73 @@ const hasGetResponseBodyResponseInResponse = (event: unknown): event is {request
 	"response" in event && typeof event.response === "object" && event.response != null &&
 	"body" in event.response && typeof event.response.body === "string";
 
+/**
+ * This class is responsible for building the entries of a HAR by handling
+ * Network events through its `onNetworkEvent` method and then returning
+ * the entries via its `entries` getter.
+ */
 export class HarEntriesBuilder {
+	/**
+	 * The time lord turns timestamps into monotonically-increasing wall times
+	 * (whereas wall times on events are not guaranteed to be monotonically increasing).
+	 */
 	timelord: TimeLord = new TimeLord();
+	/**
+	 * All entries created are added to this list, regardless of whether we have enough
+	 * data about them to create a valid HAR entry.
+	 */
 	allEntryBuilders: HarEntryBuilder[] = [];
+	/**
+	 * Track EntryBuilders by their frameId (to associate them with pages).
+	 */
 	entryBuildersByFrameId = new Map<FrameId, HarEntryBuilder[]>();
+	/**
+	 * Track EntryBuilders by their requestId so we can associate events
+	 * for the same request.
+	 * 
+	 * Note that redirects have the same requestId, so when a redirect happens,
+	 * the EntryBuilder for the request to the original/prior URL will
+	 * be kicked out of this map and replaced by the request to the new
+	 * (redirected) URL, as subsequent events pertain to the redirected/new URL.
+	 */
 	entryBuildersByRequestId = new Map<string, HarEntryBuilder>();
+
+	/**
+	 * For debugging and legacy purposes, we track the order in which we create entries
+	 * and assign each new one an creation-order index.
+	 */
 	harEntryCreationIndex = 0;
 
 	constructor(readonly options: PopulatedOptions) { }
 
+	/**
+	 * Computes a list of all EntryBuilders that are valid for inclusion in a HAR archive.
+	 * 
+	 * This should only be called after all the events are collected, as it will be
+	 * computed only once and its results will be cached.
+	 */
 	getCompletedHarEntryBuilders: () => HarEntryBuilder[] = calculateOnlyOnce( () =>
 		this.allEntryBuilders.filter(e => e.isValidForInclusionInHarArchive) );
 
+	/**
+	 * Computes a list of all EntryBuilders that are valid for inclusion in a HAR archive
+	 * and then sorts them by their request time.
+	 * 
+	 * This should only be called after all the events are collected, as it will be
+	 * computed only once and its results will be cached.
+	 */
 	getCompletedHarEntryBuildersSortedByRequestTime: () => HarEntryBuilder[] = calculateOnlyOnce( () =>
 		this.getCompletedHarEntryBuilders()
 			.sort( (a, b) => a.requestTimeInSeconds - b.requestTimeInSeconds )
 	);
 
+	/**
+	 * Retrieves all the HAR Entry records computed by the HAR Entry Builders. They are
+	 * sorted by request time.
+	 * 
+	 * This should only be called after all the events are collected, as it will be
+	 * computed only once and its results will be cached.
+	 */
 	getCompletedHarEntries: () => Entry[] = calculateOnlyOnce( () => {
 		const sortedValidEntryBuilders = this.getCompletedHarEntryBuildersSortedByRequestTime();
 		const harEntries = sortedValidEntryBuilders.map((entry) => entry.entry);
@@ -36,16 +86,38 @@ export class HarEntriesBuilder {
 		return nonNullHarEntries;
 	});
 
+	/**
+	 * An array of HAR Entry records sorted by request time ready for inclusion into the
+	 * `entries` property of a HAR Log.
+	 * 
+	 * This should only be accessed after all the events are collected, as it will be
+	 * computed only once and its results will be cached.
+	 */
+	public get entries(): Entry[] {
+		return this.getCompletedHarEntries();
+	}
+
+	/**
+	 * Gets all the HAREntryBuilders that have timestamps and can be associated with pages, sorted by request time,
+	 * so that pages can find the first event associated with it and copy over their timestamp.
+	 * @param frameIds 
+	 * @returns 
+	 */
 	getHarEntriesBuildersForFrameIdsSortedByRequestSentTimeStamp = (...frameIds: FrameId[]): HarEntryBuilder[] =>
 		([] as HarEntryBuilder[]).concat(
 			...frameIds.map(frameId => this.entryBuildersByFrameId.get(frameId) ?? [])
 		)
 		.filter( e => e.isValidForPageTimeCalculations)
-		.sort(  // this.options.mimicChromeHar ?
-			// ((a, b) => a.orderArrived - b.orderArrived ) :
-			((a, b) => a.timestamp - b.timestamp )
+		.sort( ((a, b) => a.timestamp - b.timestamp )
 		);
 
+	/**
+	 * Internal function to get a HarEntryBuilder for a given requestId, or create a new one
+	 * if one does not exist.
+	 * 
+	 * @param requestId The requestId of the network event
+	 * @returns A HarEntryBuilder for the requestId
+	 */
 	#getOrCreateForRequestId(requestId: string) {
 		let entry = this.entryBuildersByRequestId.get(requestId);
 		if (entry == null) {
@@ -71,8 +143,10 @@ export class HarEntriesBuilder {
 	 */
 	onNetworkEvent = (eventName: string, untypedEvent: unknown): void => {
 		if (!isHarNetworkEventOrMetaEventName(eventName)) {
-			// console.log(`Ignoring event ${eventName}`);
+			return;
 		}
+		const {requestId} = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
+		const entryBuilder = this.#getOrCreateForRequestId(requestId);
 
 		// The client of this package can attach response bodies to the
 		// `Network.loadingFinished` event, the `Network.responseReceived` event,
@@ -82,9 +156,8 @@ export class HarEntriesBuilder {
 		// This records response bodies from whatever event they are attached to or
 		// from the meta event.
 		if (hasGetResponseBodyResponseInResponse(untypedEvent)) {
-			const entry = this.#getOrCreateForRequestId(untypedEvent.requestId);
 			const {body, base64Encoded=false} = untypedEvent.response;
-			entry.getResponseBodyResponse = {base64Encoded, body};
+			entryBuilder.getResponseBodyResponse = {base64Encoded, body};
 		}
 
 		// Handle all network events using well-defined typings
@@ -103,7 +176,7 @@ export class HarEntriesBuilder {
 				 * and associate it with a *prior* entry.
 				 */
 				const {redirectResponse, ...event} = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const {requestId, frameId=""} = event;
+				const {frameId=""} = event;
 				let priorRedirects = 0;
 				const priorEntryForThisRequestId = this.entryBuildersByRequestId.get(requestId);
 				if (priorEntryForThisRequestId != null && priorEntryForThisRequestId._requestWillBeSentEvent != null) {
@@ -122,7 +195,6 @@ export class HarEntriesBuilder {
 
 				// As with every other event, we add this one to the entry
 				// associated with its requestId.
-				const entryBuilder = this.#getOrCreateForRequestId(requestId);
 				entryBuilder._requestWillBeSentEvent = event;
 
 				// Also count the number of prior redirects, which can help debug
@@ -145,74 +217,53 @@ export class HarEntriesBuilder {
 			 * and process them after all events have been collected.
 			 */
 			case "Network.responseReceived": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.responseReceivedEvent = event;
+				entryBuilder.responseReceivedEvent = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.requestWillBeSentExtraInfo": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.requestWillBeSentExtraInfoEvent = event;
+				entryBuilder.requestWillBeSentExtraInfoEvent = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.responseReceivedExtraInfo": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.responseReceivedExtraInfoEvent = event;
+				entryBuilder.responseReceivedExtraInfoEvent = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.requestServedFromCache": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.requestServedFromCacheEvent = event;
+				entryBuilder.requestServedFromCacheEvent = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.loadingFinished": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.loadingFinishedEvent = event;
+				entryBuilder.loadingFinishedEvent = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.loadingFailed": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.loadingFailedEvent = event;
+				entryBuilder.loadingFailedEvent = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.dataReceived": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.dataReceivedEvents.push(event);
+				entryBuilder.dataReceivedEvents.push(untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>);
 				break;
 			}
 			case "Network.resourceChangedPriority": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.resourceChangedPriorityEvent = event;
+				entryBuilder.resourceChangedPriorityEvent = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.getResponseBodyResponse": {
-				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.getResponseBodyResponse = event;
+				entryBuilder.getResponseBodyResponse = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				break;
 			}
 			case "Network.webSocketFrameSent": {
 				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-				const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-				entryBuilder.webSocketEvents.push({type: "sent", event});
+				entryBuilder.webSocketEvents.push({type: "send", event});
 				break;
 			}
-			// case "Network.webSocketFrameReceived": {
-			// 	const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-			// 	const entryBuilder = this.#getOrCreateForRequestId(event.requestId);
-			// 	entryBuilder.webSocketEvents.push({type: "receive", event});
-			// 	break;
-			// }
+			case "Network.webSocketFrameReceived": {
+				const event = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
+				entryBuilder.webSocketEvents.push({type: "receive", event});
+				break;
+			}
 			// default: {
-			// 	// We could report unknown events here, but better to use lint
-			// 	// switch-exhaustiveness-check
+			// 	Left out to ensure linter rule will catch events without a case statement.
 			// }
 		}
 	};

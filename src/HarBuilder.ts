@@ -50,7 +50,7 @@ export class HarBuilder {
 		this.pagesBuilder.assignEntriesToPages();
 		this.pagesBuilder.assignPageIds();
 		const {pages} = this.pagesBuilder;
-		const entries = this.entriesBuilder.getCompletedHarEntries();
+		const {entries} = this.entriesBuilder;
 
 		const {name, version} = packageDetails;
 
