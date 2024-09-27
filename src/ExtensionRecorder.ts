@@ -35,7 +35,7 @@ export const recordBrowserTabToHarFromWithinExtension = async (
 				});
 			}
 		}		
-	}
+	};
 
 	try {
 		await chrome.debugger.attach({tabId}, '1.3');
@@ -49,4 +49,4 @@ export const recordBrowserTabToHarFromWithinExtension = async (
 	} finally {
 		await chrome.debugger.detach({tabId});
 	}
-}
+};

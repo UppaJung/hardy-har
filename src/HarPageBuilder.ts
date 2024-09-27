@@ -20,7 +20,7 @@ export class HarPageBuilder {
 
 	addFrameId = (frameId: FrameId): void => {
 		this.frameIds.add(frameId);
-	}
+	};
 
 	protected get title(): string {
 		return this.frameRequestedNavigationEvent?.url ?? this.navigatedWithinDocumentEvent?.url ?? this.earliestRequest.requestUrl ?? "unknown";
@@ -73,7 +73,7 @@ export class HarPageBuilder {
 	get page(): Page {
 		const {id, title, startedDateTime, pageTimings} = this;
 		if (id == null) {
-			throw new Error("Cannot construct new Har format page unless the builder's id field has been set.")
+			throw new Error("Cannot construct new Har format page unless the builder's id field has been set.");
 		}
 		return {
 			id,

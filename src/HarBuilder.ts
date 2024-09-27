@@ -66,7 +66,7 @@ export class HarBuilder {
 				comment: this.entriesBuilder.timelord.commentOnSkew
 			}
 		} as const satisfies HttpArchive;
-	}
+	};
 
 	/**
 	 * Record a debugger events without typing
@@ -80,7 +80,7 @@ export class HarBuilder {
 		} else if (eventName.startsWith('Page.')) {
 			this.pagesBuilder.onPageEvent(eventName, untypedEvent);
 		}
-	}
+	};
 
 	/**
 	 * Record an event observed from the Chrome DevTools Protocol (CDP).
@@ -89,7 +89,7 @@ export class HarBuilder {
 	 */
 	onTypedDebuggerEvent = <NAME extends HarEventOrMetaEventName>(eventName: NAME, event: DebuggerEventOrMetaEvent<NAME>): void => {
 		this.onDebuggerEvent(eventName, event);
-	}
+	};
 
 	/**
 	 * Generate a HAR archive from [name, event] pairs.
@@ -102,7 +102,7 @@ export class HarBuilder {
 			this.onDebuggerEvent(eventName, untypedEvent);
 		}
 		return this.getHarArchive();
-	}
+	};
 
 	/**
 	 * Generate a HAR archive from an array of {eventName, event} objects.
@@ -121,7 +121,7 @@ export class HarBuilder {
 	 */
 	static fromUntypedEventNameAndObjectTuples = (eventNameAndObjectTuples: Iterable<[string, unknown]>, options: Options): HttpArchive => {
 		return new HarBuilder(options).fromUntypedDebuggerEventNameAndObjectTuples(eventNameAndObjectTuples);
-	}
+	};
 
 	/**
 	 * Generate a HAR archive from an array of typed [eventName, event] tuples.

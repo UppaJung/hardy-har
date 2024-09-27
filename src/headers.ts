@@ -79,7 +79,7 @@ export const headersRecordToArrayOfHarHeaders = <T extends Record<string, string
 		}, [] as Header[]
 	);
 	return sortHarHeadersByName(harHeaders);
-}
+};
 
 /**
  * Perform case-insensitive search for a header in a headers object.
@@ -87,9 +87,9 @@ export const headersRecordToArrayOfHarHeaders = <T extends Record<string, string
 export const getHarHeaderValue = (headers: Header[] | undefined, headerToFind: string): string | undefined => {
 	const headerToFindLc = headerToFind.toLowerCase();
 	return (headers ?? []).find(({name}) => name.toLowerCase() === headerToFindLc)?.value;
-}
+};
 
 export const getHeaderValue = (headers: DevToolsProtocol.Network.Headers, headerToFind: string) => {
 	const headerToFindLc = headerToFind.toLowerCase();
 	return Object.entries(headers).find(([name]) => name.toLowerCase() === headerToFindLc)?.[1];
-}
+};

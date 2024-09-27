@@ -23,7 +23,7 @@ function getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(startMs: num
 }
 
 export class HarEntryBuilder {
-	priorRedirects: number = 0;
+	priorRedirects = 0;
 	/**
 	 * Store the RequestWillBeSentEvent without any redirect response, as redirect responses belong to the
 	 * prior entry (the one that resulted ina redirect, triggering this new entry to the redirected location.)
@@ -80,7 +80,7 @@ export class HarEntryBuilder {
 
 	assignToPage = (page: HarPageBuilder): void => {
 		this.#assignedPage = page;
-	}
+	};
 
 	private get page() {
 		return this.#assignedPage;
@@ -149,7 +149,7 @@ export class HarEntryBuilder {
 	private getResponseHeader = (caseInsensitiveName: string) => {
 		const nameLc = caseInsensitiveName.toLowerCase();
 		return this.responseHeaders.find( v => v.name.toLowerCase() == nameLc);
-	}
+	};
 
 	private get responseEncodedDataLength(): number | undefined {
 		return this.loadingFinishedEvent?.encodedDataLength; // ?? this.response.encodedDataLength;
@@ -301,7 +301,7 @@ export class HarEntryBuilder {
 	}
 
 	private get requestParsedUrl() {
-		const toParse = this.request.url + (this.request.urlFragment ?? '')
+		const toParse = this.request.url + (this.request.urlFragment ?? '');
 		try {
 			return new URL(toParse);
 		} catch {
@@ -380,7 +380,7 @@ export class HarEntryBuilder {
 		const encoding = this.options.mimicChromeHar ?
 			(this.response as {encoding?: string}).encoding :
 			this.getResponseBodyResponse?.base64Encoded ? 'base64' : undefined;
-		const encodingObj = this.options.mimicChromeHar || encoding != null ? {encoding} : {}
+		const encodingObj = this.options.mimicChromeHar || encoding != null ? {encoding} : {};
 
 		return {
 			mimeType,
@@ -388,7 +388,7 @@ export class HarEntryBuilder {
 			text: responseBodyText,
 			...encodingObj,
 			...compression_obj,
-		} satisfies Content
+		} satisfies Content;
 				
 	}
 
@@ -411,7 +411,7 @@ export class HarEntryBuilder {
 				...baseFields,
 				_initiator: initiator.url,
 				_initiator_line: (initiator.lineNumber ?? 0) + 1,
-			}
+			};
 		} else if (initiator.type == 'script' && initiator.stack && initiator.stack.callFrames.length > 0) {
 			const [topCallFrame] = initiator.stack.callFrames;
 			if (topCallFrame != null) {
@@ -422,7 +422,7 @@ export class HarEntryBuilder {
 					_initiator_column: topCallFrame.columnNumber + 1,
 					_initiator_function_name: topCallFrame.functionName,
 					_initiator_script_id: topCallFrame.scriptId,
-				}
+				};
 			}
 		}
 		return baseFields;
@@ -491,7 +491,7 @@ export class HarEntryBuilder {
 				eTag: '', // we do not have data to populate this field, but it is required
 				hitCount: 0, // we do not have data to populate this field, but it is required
 			}
-		}
+		};
 	}
 
 
@@ -512,7 +512,7 @@ export class HarEntryBuilder {
 	}
 
 	get requestTimeInSeconds(): MonotonicTimeInSeconds {
-		return this.response.timing?.requestTime ?? (() => {throw new Error("timing not set")})(); //  ?? this.requestWillBeSentEvent.timestamp;
+		return this.response.timing?.requestTime ?? (() => {throw new Error("timing not set");})(); //  ?? this.requestWillBeSentEvent.timestamp;
 	}
 
 	/**
@@ -562,7 +562,7 @@ export class HarEntryBuilder {
 					bytes: e.dataLength
 				} satisfies Chunk as Chunk
 			))
-		}
+		};
 	}
 
 	get pagerefObj(): {pageref?: string} {
@@ -643,7 +643,7 @@ export class HarEntryBuilder {
 			headersSize: this.requestHeadersSize,
 			httpVersion: this.httpVersion ?? '',
 			...this._isLinkPreloadObj,
-		} as const satisfies Request
+		} as const satisfies Request;
 	}
 
 	private get harResponse(): Response {

@@ -1,5 +1,7 @@
 // spell-checker: disable
 
+// eslint-disable-file @typescript-eslint/no-non-null-assertion
+
 import { describe, it as test } from "node:test";
 import { expect } from "expect";
 
@@ -23,7 +25,7 @@ const fixChromeHarHeaders = (headers: Har.Header[]): Har.Header[] => {
     }
   }
   return sortHarHeadersByName([...headersMap.values()]);
-}
+};
 
 /**
  * Validate that, for each tcp connection, the previous request is fully completed before then next starts.
@@ -41,7 +43,7 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: Entry[]) {
       entries.set(entry.connection, e);
       return entries;
     }, new Map<string, Entry[]>());
-  entriesByConnection.forEach((entries, connection) => {
+  entriesByConnection.forEach((entries, _connection) => {
     let previousEntry = entries.shift();
     for (const entry of entries) {
       if (previousEntry != null) {
@@ -222,7 +224,7 @@ test('chrome66', async () => {
 test('Parses IPv6 address', async () => {
   const perflogPath = perfLogPath('www.google.ru.json');
   const har = await parsePerflog(perflogPath);
-  expect(har.log.entries[0]?.serverIPAddress).toBe('2a00:1450:400f:80a::2003')
+  expect(har.log.entries[0]?.serverIPAddress).toBe('2a00:1450:400f:80a::2003');
 });
 
 test('Forwards the resource type value', async () => {
@@ -397,6 +399,6 @@ test('Network.responseReceivedExtraInfo may be fired before or after responseRec
 });
 
 
-}
+};
 
 runAll();

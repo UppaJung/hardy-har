@@ -10,7 +10,7 @@ export const networkCookieToHarFormatCookie = ({expires, ...rest}: DevToolsProto
 	expires: (expires as unknown as string) === 'Infinity'
         ? undefined
         : new Date(expires * 1000).toISOString() as ISODateTimeString,
-})
+});
 
 export const toughCookieObjectToHarFormatCookie = ({
 	value, expires, httpOnly, secure, ...toughCookie
@@ -39,7 +39,7 @@ const parseCookiesSeparatedBy = (delimiterSeparatingCookieEntries: string) =>
 	(header: string): Har.Cookie[] =>
 		header
     	.split(delimiterSeparatingCookieEntries).filter(x => x != null)
-    	.map(parseCookie).filter(x => x != null)
+    	.map(parseCookie).filter(x => x != null);
 
 export const parseRequestCookies = parseCookiesSeparatedBy(';');
 export const parseResponseCookies = parseCookiesSeparatedBy('\n');

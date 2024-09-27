@@ -3,7 +3,7 @@ import {name, version as stringVersion} from "../package.json";
 export type Version = `${number}.${number}.${number}`;
 const version = stringVersion as Version;
 
-export {name, version}
+export {name, version};
 
 // For deno
 // import type { PackageJson } from "jsr:@deno/dnt";

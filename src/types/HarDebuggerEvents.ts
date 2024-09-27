@@ -35,8 +35,8 @@ export type HarEventOrMetaEventName = HarNetworkOrPageEventName | HarNetworkMeta
 export type HarEvent<T extends HarEventOrMetaEventName> = DebuggerEventOrMetaEvent<T>;
 
 export type HarEventNameAndObjectTuple<NAME extends HarEventOrMetaEventName = HarEventOrMetaEventName> = [NAME, HarEvent<NAME>];
-export type HarEventNameAndObject<NAME extends HarEventOrMetaEventName = HarEventOrMetaEventName> = { eventName: NAME; event: HarEvent<NAME>; };
-export type ChromeHarMethodParamsObject = { method: string; params: unknown; };
+export interface HarEventNameAndObject<NAME extends HarEventOrMetaEventName = HarEventOrMetaEventName> { eventName: NAME; event: HarEvent<NAME>; }
+export interface ChromeHarMethodParamsObject { method: string; params: unknown; }
 
 export type DevToolsProtocolGetResponseBodyRequest = DevToolsProtocol.Network.GetResponseBodyRequest;
 export type DevToolsProtocolGetResponseBodyResponse = DevToolsProtocol.Network.GetResponseBodyResponse;
