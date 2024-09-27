@@ -1,0 +1,53 @@
+{
+  "name": "@uppajung/hardy-har",
+  "type": "module",
+  "version": "0.1.1",
+  "description": "A Hardy HTTP Archive (HAR) Generator ",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "node --import tsx --test src/test/*.test.ts",
+    "test:vscode": "node --import tsx --test src/*.test.ts test/**/**/*.test.ts",
+    "build": "rm -rf dist && node esbuild.js && tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/UppaJung/hardy-har.git"
+  },
+  "keywords": [
+    "http",
+    "archive",
+    "har",
+    "typescript"
+  ],
+  "author": "Stuart Schechter",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/UppaJung/hardy-har/issues"
+  },
+  "homepage": "https://github.com/UppaJung/hardy-har",
+  "dependencies": {
+    "@types/har-format": "^1.2.15",
+    "@types/node": "^22.7.3",
+    "devtools-protocol": "^0.0.1359167",
+    "esbuild": "^0.24.0",
+    "esbuild-node-externals": "^1.15.0",
+    "tough-cookie": "^5.0.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.11.1",
+    "@types/chrome": "^0.0.272",
+    "chrome-har": "^0.13.5",
+    "eslint": "^9.11.1",
+    "expect": "^29.7.0",
+    "globals": "^15.9.0",
+    "tsx": "^4.19.1",
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.7.0"
+  }
+}

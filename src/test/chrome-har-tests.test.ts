@@ -1,16 +1,16 @@
 // spell-checker: disable
 
-import { describe, it as test } from "jsr:@std/testing/bdd";
-import { expect } from "jsr:@std/expect";
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
+import { describe, it as test } from "node:test";
+import { expect } from "expect";
 
-import { sortHarHeadersByName } from "../lib/headers.ts";
-import { harFromChromeHarMessageParamsObjects, type Options, type Har} from "../mod.ts";
+import { sortHarHeadersByName } from "../headers.ts";
+import { harFromChromeHarMessageParamsObjects, type Options, type Har} from "../index.ts";
 
-import * as ch from 'npm:chrome-har@0.13.5';
-import * as path from "jsr:@std/path";
-import type { Entry } from "../lib/types/HttpArchiveFormat.ts";
-import { run } from "node:test";
-
+import * as ch from "chrome-har";
+import * as path from "path";
+import type { Entry } from "../types/HttpArchiveFormat.ts";
+import {readdir, readFile} from "fs/promises";
 const runAll = async () => {
 const TestLogPath = path.resolve(import.meta.dirname!, 'test-logs');
 
@@ -24,7 +24,7 @@ const fixChromeHarHeaders = (headers: Har.Header[]): Har.Header[] => {
     }
   }
   return sortHarHeadersByName([...headersMap.values()]);
-}
+};
 
 /**
  * Validate that, for each tcp connection, the previous request is fully completed before then next starts.
@@ -42,7 +42,7 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: Entry[]) {
       entries.set(entry.connection, e);
       return entries;
     }, new Map<string, Entry[]>());
-  entriesByConnection.forEach((entries, connection) => {
+  entriesByConnection.forEach((entries, /* _connection */) => {
     let previousEntry = entries.shift();
     for (const entry of entries) {
       if (previousEntry != null) {
@@ -50,10 +50,10 @@ function validateRequestsOnSameConnectionDoNotOverlap(entries: Entry[]) {
           previousEntry._requestTime! + previousEntry.time / 1000;
         const timings = entry.timings;
         const currentEntryStartTime = entry._requestTime! + Math.max(0, timings.blocked!) / 1000;
-        expect(
-          currentEntryStartTime >= previousEnd,
-          `Requests ${previousEntry._requestId } and ${entry._requestId} overlap on connection ${connection}`
-        ).toBe(true);
+        expect(currentEntryStartTime).toBeGreaterThanOrEqual(previousEnd);
+        //   currentEntryStartTime >= previousEnd,
+        //   `Requests ${previousEntry._requestId } and ${entry._requestId} overlap on connection ${connection}`
+        // ).toBe(true);
       }
       previousEntry = entry;
     }
@@ -65,14 +65,14 @@ function perfLogPath(filename: string) {
 }
 
 async function perflogs() {
-  const dirListing = await Array.fromAsync(Deno.readDir(TestLogPath));
-  return dirListing.filter(e => e.isFile && path.extname(e.name) === '.json').map( e => e.name );
+  const dirListing = await readdir(TestLogPath, {withFileTypes: true});
+  return dirListing.filter(e => e.isFile() && path.extname(e.name) === '.json').map( e => e.name );
 }
 
 const filenames = await perflogs();
 
 async function parsePerflog(perflogPath: string, options?: Options) {
-  const log = JSON.parse(await Deno.readTextFile(perflogPath));
+  const log = JSON.parse(await readFile(perflogPath, {encoding: 'utf8'}));
   const har = harFromChromeHarMessageParamsObjects(log, options);
   return har;
 }
@@ -87,11 +87,11 @@ describe('Mimimcs chrome-har', () => {
     .filter( f => f !== 'missing-response.json' )
   ) {
     test (`${filename}`, async () => {
-      const debuggerLog = JSON.parse(await Deno.readTextFile(perfLogPath(filename)));
+      const debuggerLog = JSON.parse(await readFile(perfLogPath(filename), {encoding: 'utf8'}));
       const hardyHar = harFromChromeHarMessageParamsObjects(debuggerLog, options);
       expect(sortedByRequestTime(hardyHar.log.entries)).toEqual(hardyHar.log.entries);
       validateRequestsOnSameConnectionDoNotOverlap(hardyHar.log.entries);
-      const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as Har.HttpArchive;
+      const chromeHar = ch.harFromMessages(debuggerLog,{includeTextFromResponseBody: false}) as unknown as Har.HttpArchive;
 
 
 
@@ -223,7 +223,7 @@ test('chrome66', async () => {
 test('Parses IPv6 address', async () => {
   const perflogPath = perfLogPath('www.google.ru.json');
   const har = await parsePerflog(perflogPath);
-  expect(har.log.entries[0]?.serverIPAddress).toBe('2a00:1450:400f:80a::2003')
+  expect(har.log.entries[0]?.serverIPAddress).toBe('2a00:1450:400f:80a::2003');
 });
 
 test('Forwards the resource type value', async () => {
@@ -398,6 +398,6 @@ test('Network.responseReceivedExtraInfo may be fired before or after responseRec
 });
 
 
-}
+};
 
 runAll();

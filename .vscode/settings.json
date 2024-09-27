@@ -1,5 +1,5 @@
 {
-	"deno.enable": true,
+	"deno.enable": false,
 	"deno.lint": true,
 	"cSpell.words": [
 		"Debuggee",
@@ -8,6 +8,8 @@
 		"Pageless",
 		"pageref",
 		"timelord",
+		"tseslint",
+		"unchunked",
 		"walltime"
 	]
 }

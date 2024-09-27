@@ -1,4 +1,4 @@
-import type {Protocol as DevToolsProtocol} from 'npm:devtools-protocol@0.0.1358005';
+import type {Protocol as DevToolsProtocol} from 'devtools-protocol';
 export type {DevToolsProtocol};
 
 type DebuggerPageEventNameAndObject =

@@ -1,12 +1,12 @@
 declare module "chrome-har" {
   import type { Har } from "har-format";
 
-  type Message = {
+  interface Message {
     method: string;
     params: unknown;
   }
 
-  type Options = {
+  interface Options {
     includeTextFromResponseBody: boolean;
   }
 

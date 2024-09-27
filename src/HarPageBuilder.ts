@@ -3,6 +3,10 @@ import type { HarEntryBuilder } from "./HarEntryBuilder.ts";
 import type { FrameId, Page, DevToolsProtocol, PageTimings, Timestamp, ISODateTimeString} from "./types/HttpArchiveFormat.ts";
 import { calculateOnlyOnce, roundToThreeDecimalPlaces, } from "./util.ts";
 
+/**
+ * This builder holds a set of events associated with a HAR page and then,
+ * after all data has been populated, generates a HAR page object.
+ */
 export class HarPageBuilder {
 	id?: string;
 	frameAttachedEvents = [] as  DevToolsProtocol.Page.FrameAttachedEvent[];
@@ -20,7 +24,7 @@ export class HarPageBuilder {
 
 	addFrameId = (frameId: FrameId): void => {
 		this.frameIds.add(frameId);
-	}
+	};
 
 	protected get title(): string {
 		return this.frameRequestedNavigationEvent?.url ?? this.navigatedWithinDocumentEvent?.url ?? this.earliestRequest.requestUrl ?? "unknown";
@@ -73,7 +77,7 @@ export class HarPageBuilder {
 	get page(): Page {
 		const {id, title, startedDateTime, pageTimings} = this;
 		if (id == null) {
-			throw new Error("Cannot construct new Har format page unless the builder's id field has been set.")
+			throw new Error("Cannot construct new Har format page unless the builder's id field has been set.");
 		}
 		return {
 			id,

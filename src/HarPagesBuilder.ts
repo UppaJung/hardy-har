@@ -2,16 +2,21 @@ import type { DebuggerEvent } from "./types/DebuggerEvent.ts";
 import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import { HarPageBuilder } from "./HarPageBuilder.ts";
 import type { Options } from "./Options.ts";
-import type {Har} from "./types/index.ts"
+import type {Har} from "./types/index.ts";
 import { type FrameId } from "./types/HttpArchiveFormat.ts";
 import { calculateOnlyOnce } from "./util.ts";
 import { isHarPageEventName } from "./types/type-checkers.ts";
 
+/**
+ * This class is responsible for building the pages of a HAR by handling
+ * Page events through its `onPageEvent` method and then returning
+ * the entries via its `pages` getter.
+ */
 
 export class HarPagesBuilder {
 	constructor(protected readonly harEntriesBuilder: HarEntriesBuilder, protected readonly options: Options) {}
 
-	byFrameId: Map<FrameId, HarPageBuilder> = new Map();
+	byFrameId = new Map<FrameId, HarPageBuilder>();
 	pageStackWithTopAtIndex0: HarPageBuilder[] = [];
 
 	getOrCreateByFrameId = (frameId: FrameId): HarPageBuilder => {
@@ -22,7 +27,7 @@ export class HarPagesBuilder {
 			this.pageStackWithTopAtIndex0.unshift(page);
 		}
 		return page;
-	}
+	};
 
 	createForEntriesWithNoPage = (frameIds: FrameId[]): HarPageBuilder => {
 		const page = new HarPageBuilder(this.harEntriesBuilder, 0, frameIds);
@@ -31,7 +36,7 @@ export class HarPagesBuilder {
 		}
 		this.pageStackWithTopAtIndex0.unshift(page);
 		return page;
-	}
+	};
 
 	get topOfPageStack(): HarPageBuilder { return this.pageStackWithTopAtIndex0[0]; }
 
@@ -59,9 +64,11 @@ export class HarPagesBuilder {
 			}
 		}
 		for (const {entryBuilder, pageBuilder} of entryBuildersWithPagesIdentifiedByTheirFrames) {
-			entryBuilder.assignToPage(pageBuilder!);
+			if (pageBuilder != null) {
+				entryBuilder.assignToPage(pageBuilder);
+			}
 		}
-	}
+	};
 
 	assignPageIds = (): void => {
 		this.validPageBuilders()
@@ -69,7 +76,7 @@ export class HarPagesBuilder {
 			// Assign the next sequential page number.
 			page.id = `page_${index + 1}`;
 		});
-	}
+	};
 
 	get pages(): Har.Page[]  { 
 		return this.validPageBuilders()

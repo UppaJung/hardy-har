@@ -2,7 +2,7 @@ import type { Options } from "./Options.ts";
 import type { PostData, QueryString } from "./types/HttpArchiveFormat.ts";
 
 export const calculateOnlyOnce = <T>(calculation: () => T ): () => T => {
-	let hasBeenCalculated: boolean = false;
+	let hasBeenCalculated = false;
 	let result: T | undefined;
 	return () => {
 		if (!hasBeenCalculated) {
@@ -10,8 +10,8 @@ export const calculateOnlyOnce = <T>(calculation: () => T ): () => T => {
 			result = calculation();
 		}
 		return result as T;
-	}
-}
+	};
+};
 
 
 export const isNonEmptyString = (o: string | undefined): o is string => typeof o === 'string' && o.length > 0;

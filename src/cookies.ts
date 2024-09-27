@@ -2,7 +2,7 @@
 //   https://github.com/sitespeedio/chrome-har/blob/5b076f8c8e578e929670761dcc31345e4e87103c/index.js
 
 import type {DevToolsProtocol, ISODateTimeString} from "./types/HttpArchiveFormat.ts";
-import {Cookie} from "npm:tough-cookie@5.0.0";
+import {Cookie} from "tough-cookie";
 import type { Har } from "./types/index.ts";
 
 export const networkCookieToHarFormatCookie = ({expires, ...rest}: DevToolsProtocol.Network.Cookie): Har.Cookie => ({
@@ -10,7 +10,7 @@ export const networkCookieToHarFormatCookie = ({expires, ...rest}: DevToolsProto
 	expires: (expires as unknown as string) === 'Infinity'
         ? undefined
         : new Date(expires * 1000).toISOString() as ISODateTimeString,
-})
+});
 
 export const toughCookieObjectToHarFormatCookie = ({
 	value, expires, httpOnly, secure, ...toughCookie
@@ -39,7 +39,7 @@ const parseCookiesSeparatedBy = (delimiterSeparatingCookieEntries: string) =>
 	(header: string): Har.Cookie[] =>
 		header
     	.split(delimiterSeparatingCookieEntries).filter(x => x != null)
-    	.map(parseCookie).filter(x => x != null)
+    	.map(parseCookie).filter(x => x != null);
 
 export const parseRequestCookies = parseCookiesSeparatedBy(';');
 export const parseResponseCookies = parseCookiesSeparatedBy('\n');
