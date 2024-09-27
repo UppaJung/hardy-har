@@ -83,6 +83,15 @@ export class HarPagesBuilder {
 			.map( page => page.page );
 	}
 
+	/**
+	 * Handle Chrome DevTools Protocol "Page." events to gather them all into
+	 * pageBuilder objects that generate the page entries of a HAR file.
+	 * 
+	 * @param eventName Chrome DevTools Protocol event name
+	 * @param untypedEvent  Chrome DevTools Protocol event (the type of which
+	 * will be inferred from the eventName).
+	 * @returns 
+	 */
 	onPageEvent = (eventName: string, untypedEvent: unknown): void => {
 		if (!isHarPageEventName(eventName)) return;
 		const [topPageOfStack] = this.pageStackWithTopAtIndex0;

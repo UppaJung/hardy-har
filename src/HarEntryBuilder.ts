@@ -519,7 +519,7 @@ export class HarEntryBuilder {
 	 * > size [number] - Length of the returned content in bytes. Should be equal to response.bodySize if there is no compression and
 	 * bigger when the content has been compressed.
 	 */
-	get contentSize(): number {
+	private get contentSize(): number {
 		if (this.dataReceivedEvents.length > 0) {
 			// calculate the content length by summing data received events
 			const sumOfDataReceivedDataLengths = this.dataReceivedEvents
@@ -658,7 +658,7 @@ export class HarEntryBuilder {
 	 * the requested started by many milliseconds. Failing the presence of a timing object in the response,
 	 * we fall back to the timestamp on the requestWillBeSent event.
 	 */
-	private get requestStartTimeInSecondsFromUnixEpoch(): SecondsFromUnixEpoch {
+	get requestStartTimeInSecondsFromUnixEpoch(): SecondsFromUnixEpoch {
 		return this.timelord.getApproximateWallTimeInSecondsFromUnixEpochFromMonotonicallyIncreasingTimestamp(this.timing?.requestTime ?? this.timestamp);
 	}
 

@@ -12,15 +12,16 @@
  *      pseudo time = document wall reference +
  *                        (m_requestTime - document monotonic reference).
  */
-
-
 export class TimeLord {
-//  #earliestWallTime = Number.MAX_VALUE;
 	#earliestTimestamp = Number.MAX_VALUE;
   #earliestWallTimeMinusTimestamp = Number.MAX_VALUE;
   #largestWallTimeMinusTimestamp = Number.MIN_VALUE;
   #smallestWallTimeMinusTimestamp = Number.MAX_VALUE;
 	
+  /**
+   * Collect timestamp/wall-time pairs from Chrome DevTools Protocol events so that
+   * range of differences of (wallTime - timestamp) can be calculated.
+   */
   addTimestampWallTimePair = (({ timestamp, wallTime }: { timestamp: number; wallTime: number; }): void => {
     const wallTimeMinusTimestamp = wallTime - timestamp;
     if (timestamp < this.#earliestTimestamp) {
@@ -35,6 +36,19 @@ export class TimeLord {
     }
   });
 
+  /**
+   * Wall times are not always monotonically increasing because of adjustments that may
+   * cause seconds to be repeated or be skipped.
+   * 
+   * Timestamps are guaranteed to be monotonically increasing over time, but do not have
+   * a fixed relationship to wall time.
+   * 
+   * This method converts a timestamp to an approximate walltime, by taking the wall time at the 
+   * pair with the earliest observed timestamp, then adding the number of milliseconds that has
+   * passed between that earliest timestamp and the parameter passed to this method.
+   * @param timestamp A monotonically increasing timestamp to convert to an approximate wall time.
+   * @returns A wall time
+   */
   getApproximateWallTimeInSecondsFromUnixEpochFromMonotonicallyIncreasingTimestamp = (timestamp: number): number => {
     return this.#earliestWallTimeMinusTimestamp + timestamp;
   };
