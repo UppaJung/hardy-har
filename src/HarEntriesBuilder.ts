@@ -146,7 +146,7 @@ export class HarEntriesBuilder {
 			return;
 		}
 		const {requestId} = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
-		const entryBuilder = this.#getOrCreateForRequestId(requestId);
+		let entryBuilder = this.#getOrCreateForRequestId(requestId);
 
 		// The client of this package can attach response bodies to the
 		// `Network.loadingFinished` event, the `Network.responseReceived` event,
@@ -178,11 +178,11 @@ export class HarEntriesBuilder {
 				const {redirectResponse, ...event} = untypedEvent as DebuggerEventOrMetaEvent<typeof eventName>;
 				const {frameId=""} = event;
 				let priorRedirects = 0;
-				const priorEntryForThisRequestId = this.entryBuildersByRequestId.get(requestId);
-				if (priorEntryForThisRequestId != null && priorEntryForThisRequestId._requestWillBeSentEvent != null) {
-					priorRedirects = priorEntryForThisRequestId.priorRedirects + 1;
-					priorEntryForThisRequestId.redirectResponse = redirectResponse;
+				if (entryBuilder._requestWillBeSentEvent != null) {
+					priorRedirects = entryBuilder.priorRedirects + 1;
+					entryBuilder.redirectResponse = redirectResponse;
 					this.entryBuildersByRequestId.delete(requestId);
+					entryBuilder = this.#getOrCreateForRequestId(requestId);
 				}
 
 				// Wall times are not monotonically increasing, whereas timestamps are.
