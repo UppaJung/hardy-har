@@ -104,10 +104,9 @@ For HAR format typings, use the NPM [`@types/har-format`](https://www.npmjs.com/
 
 ### To dos (help wanted)
 
+ - Test cases for web sockets
  - Create additional test cases by recording a tab in Chrome via the debugger UI while also capturing the debugger API to generate a hardy-har .har. Then compare the two.
  - Add more examples.
- - More documentation (especially from @UppaJung before forgetting everything learned in building this).
- - File issues with the `chrome-har` team with all the bugs discovered investigating differences between outputs: negative body sizes, missing headers, duplicate headers due to mixed vs. lowercase header names, incorrect cookie dates due to failure to multiply seconds by 1000 before generating a date from milliseconds. Also, `chrome-har` doesn't look for cookies in the `Cookie` header in the requestWillBeSentExtraInfoEvent.
 
 
 [^playwright]: Though Playwright has [built-in support for recording HAR files](https://playwright.dev/docs/api/class-browser#browser-new-context-option-record-har) from its internal data structures and the [code](https://github.com/microsoft/playwright/blob/main/packages/playwright-core/src/server/har/harTracer.ts), while undocumented, looks fairly modern and well architected.
