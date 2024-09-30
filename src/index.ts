@@ -1,9 +1,10 @@
 import { HarBuilder } from "./HarBuilder.ts";
 export type * from "./Options.ts";
 export type * from "./types/DebuggerEvent.ts";
-export * from "./types/index.ts";
+export * from "./types/";
 
 export type {Options} from "./Options.ts";
+
 
 export const harFromUntypedEventNameAndObjectTuples = HarBuilder.fromUntypedEventNameAndObjectTuples;
 export const harFromEventNameAndObjectTuples = HarBuilder.fromEventNameAndObjectTuples;

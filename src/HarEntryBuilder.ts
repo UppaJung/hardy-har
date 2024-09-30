@@ -1,4 +1,4 @@
-import type {ConnectionIdString, DevToolsProtocol, FrameId, Content, Chunk, ISODateTimeString, Milliseconds, MonotonicTimeInSeconds, SecondsFromUnixEpoch} from "./types/HttpArchiveFormat.ts";
+import type {ConnectionIdString, DevToolsProtocol, FrameId, Content, Chunk, Milliseconds, MonotonicTimeInSeconds, SecondsFromUnixEpoch} from "./types/HttpArchiveFormat.ts";
 import { networkCookieToHarFormatCookie, parseCookie, parseRequestCookies, parseResponseCookies } from "./cookies.ts";
 import { calculateRequestHeaderSize, calculateResponseHeaderSize, getHeaderValue, headersRecordToArrayOfHarHeaders } from "./headers.ts";
 import {
@@ -10,7 +10,7 @@ import type { PopulatedOptions } from "./Options.ts";
 import { WebSocketMessageOpcode, type WebSocketDirectionAndEvent  } from "./types/HttpArchiveFormat.ts";
 import type { HarPageBuilder } from "./HarPageBuilder.ts";
 import type { TimeLord } from "./TimeLord.ts";
-import type { Har } from "./types/index.ts";
+import type { Har, ISODateTimeString } from "./types";
 
 
 function getTimeDifferenceInMillisecondsRoundedToThreeDecimalPlaces(startMs: number | undefined, endMs: number | undefined) {
@@ -777,7 +777,7 @@ export class HarEntryBuilder {
 	}
 
 	/**
-	 * An entry field containing all the web socket messages sent over a requestId generated via the "ws:" protocol.
+	 * An entry field containing all the web socket messages sent over a requestId generated via the "ws:" or "wss:" protocol.
 	 */
 	get _webSocketMessagesObj(): {readonly _webSocketMessages?: Har.WebSocketMessage[]} {
 		if (this.webSocketEvents.length == 0 || this.options.mimicChromeHar) {

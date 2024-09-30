@@ -1,3 +1,4 @@
+import { ISODateTimeString } from './base.ts';
 import type {DevToolsProtocol} from './DebuggerEvent.ts';
 import type * as NpmHarFormatTypes from 'har-format';
 
@@ -10,7 +11,6 @@ export type Timestamp = number;
 export type RequestId = string;
 export type FrameId = string;
 export type ConnectionIdString = string;
-export type ISODateTimeString = `${number}-${number}-${number}T${number}:${number}:${number}.${number}Z`;
 
 
 
@@ -18,7 +18,7 @@ export type ISODateTimeString = `${number}-${number}-${number}T${number}:${numbe
  * A WebSocket message.
  * 
  * These entries are placed in an array within the "_webSocketMessages" property of the HAR entry for the request
- * to established the connection via the "ws:" protocol.
+ * to established the connection via the "ws:" or "wss:" protocol.
  * 
  * See the Chrome team's [announcement of the addition of WebSockets to their HAR files](https://developer.chrome.com/blog/new-in-devtools-76/#websocket)
  * and the [commit documentation](https://issues.chromium.org/issues/41180084#comment20).

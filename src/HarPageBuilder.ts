@@ -1,6 +1,7 @@
 import type { HarEntriesBuilder } from "./HarEntriesBuilder.ts";
 import type { HarEntryBuilder } from "./HarEntryBuilder.ts";
-import type { FrameId, Page, DevToolsProtocol, PageTimings, Timestamp, ISODateTimeString} from "./types/HttpArchiveFormat.ts";
+import { ISODateTimeString } from "./types/";
+import type { FrameId, Page, DevToolsProtocol, PageTimings, Timestamp } from "./types/HttpArchiveFormat.ts";
 import { calculateOnlyOnce, roundToThreeDecimalPlaces, } from "./util.ts";
 
 /**
