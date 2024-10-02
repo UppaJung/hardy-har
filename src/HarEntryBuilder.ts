@@ -99,7 +99,7 @@ export class HarEntryBuilder {
 	 * Does this entry builder have enough information to be used to calculate page timings?
 	 */
 	get isValidForPageTimeCalculations(): boolean {
-		return this._requestWillBeSentEvent != null;
+		return this._requestWillBeSentEvent != null && this._response != null;
 	}
 
 	/**

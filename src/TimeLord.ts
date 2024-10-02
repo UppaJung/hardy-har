@@ -54,6 +54,9 @@ export class TimeLord {
   };
 
   get commentOnSkew(): string {
+    if (this.#largestWallTimeMinusTimestamp < 0) {
+      return "No events were observed.";
+    }
     const msSkew = (this.#largestWallTimeMinusTimestamp - this.#smallestWallTimeMinusTimestamp) * 1000;
     return `Ensuring monotonically increasing time may have skewed reported times by as many as ${msSkew * 1000}ms.`;
   }
