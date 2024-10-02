@@ -11,3 +11,5 @@ export const harFromEventNameAndObjectTuples = HarBuilder.fromEventNameAndObject
 export const harFromUntypedNamedDebuggerEvents = HarBuilder.fromUntypedNamedDebuggerEvents;
 export const harFromNamedDebuggerEvents = HarBuilder.fromNamedDebuggerEvents;
 export const harFromChromeHarMessageParamsObjects = HarBuilder.fromChromeHarMessageParamsObjects;
+
+export {HarBuilder};
