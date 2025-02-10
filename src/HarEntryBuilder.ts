@@ -172,9 +172,9 @@ export class HarEntryBuilder {
 	 * redirectResponse field.
 	 */
 	private get _response() {
-		if (this.responseReceivedEvent != null && this.redirectResponse != null) {
-			throw new Error("Unexpected state with event having two types of responses.");
-		}
+		// if (this.responseReceivedEvent != null && this.redirectResponse != null) {
+		// 	throw new Error("Unexpected state with event having two types of responses.");
+		// }
 		return this.responseReceivedEvent?.response ?? this.redirectResponse;
 	}
 
