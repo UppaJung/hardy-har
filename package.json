@@ -11,10 +11,9 @@
   },
   "scripts": {
     "test": "node --import tsx --test src/test/*.test.ts",
-    "publish": "npm run build && npm publish --access public",
     "test:vscode": "node --import tsx --test src/*.test.ts test/**/**/*.test.ts",
     "lint": "npx eslint .",
-    "build": "rm -rf dist && node esbuild.js && tsc --build",
+    "build": "rm -rf dist & node esbuild.js && tsc --build",
     "clean": "tsc --build --clean"
   },
   "repository": {
