@@ -1,7 +1,7 @@
 {
   "name": "@uppajung/hardy-har",
   "type": "module",
-  "version": "0.1.10",
+  "version": "0.1.12",
   "description": "A Hardy HTTP Archive (HAR) Generator ",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,16 +34,16 @@
   "homepage": "https://github.com/UppaJung/hardy-har",
   "dependencies": {
     "@types/har-format": "^1.2.15",
-    "devtools-protocol": "^0.0.1359167",
     "esbuild-plugin-polyfill-node": "^0.3.0",
     "tough-cookie": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.11.1",
-    "@types/chrome": "^0.0.272",
+    "@types/chrome": "^0.0.304",
     "@types/node": "^22.7.3",
-    "chrome-har": "^0.13.5",
-    "esbuild": "^0.24.0",
+    "chrome-har": "^1.0.1",
+    "devtools-protocol": "^0.0.1421213",
+    "esbuild": "^0.25.0",
     "esbuild-node-externals": "^1.15.0",
     "eslint": "^9.11.1",
     "expect": "^29.7.0",
